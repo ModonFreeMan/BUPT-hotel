@@ -5,6 +5,9 @@ import com.backend.anno.CustomerId;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+/**
+ * 身份证校验注解
+ */
 public class CustomerIdValidation implements ConstraintValidator<CustomerId,String> {
     //身份证校验规则
     private static final Pattern ID_CARD_PATTERN = Pattern.compile("^\\d{17}(\\d|X|x)$");

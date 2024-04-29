@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class AirConditionerBill {
-    private String serviceId;//全局服务标识
+    private String roomId;//房间号
     private Integer speedLevel;//风速
     private String startTime;//开始时间
     private String endTime;//结束时间

@@ -9,10 +9,6 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 
 
-/**
- * @author seaside
- * 2024-04-02 21:45
- */
 @Mapper
 public interface RoomMapper {
 

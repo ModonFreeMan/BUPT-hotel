@@ -2,7 +2,6 @@ package com.backend.controller;
 
 
 import com.backend.pojo.Customer;
-import com.backend.pojo.Proof;
 import com.backend.pojo.Result;
 import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
@@ -88,7 +87,7 @@ public class ReceptionController {
      * @return 凭据
      */
     @PutMapping("/proof")
-    public Result getProof(@RequestParam(value="roomId",required=true)String roomId,@RequestParam(value="roomId",required=true)double paid){
+    public Result getProof(@RequestParam(value="roomId")String roomId, @RequestParam(value="roomId")double paid){
         String serviceId = roomsService.getServiceId(roomId);
         return Result.success(receptionService.getProof(serviceId,paid));
     }

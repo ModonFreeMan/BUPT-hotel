@@ -20,8 +20,14 @@ public class RoomsController {
      */
     @PutMapping("/request")
     public Result processRequest(@RequestBody AirConditionerRequest request){
-        roomsService.processRequest(request);
-        return Result.success();
+        if(roomsService.isRequestValid(request)){
+            roomsService.processRequest(request);
+            return Result.success();
+        }
+        else{
+            return Result.error("空调请求参数不合法");
+        }
+
     }
 
     /**
@@ -33,6 +39,7 @@ public class RoomsController {
     public Result getAirConditionerStatus(@PathVariable String roomId){
         return Result.success(roomsService.getAirConditionerStatus(roomId));
     }
+
 
 
 }

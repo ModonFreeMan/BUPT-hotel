@@ -9,4 +9,6 @@ public interface RoomsService {
     void processRequest(AirConditionerRequest request);
 
     AirConditionerStatus getAirConditionerStatus(String roomId);
+
+    boolean isRequestValid(AirConditionerRequest request);
 }

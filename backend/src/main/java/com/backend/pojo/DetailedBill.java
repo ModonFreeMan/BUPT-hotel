@@ -1,0 +1,39 @@
+package com.backend.pojo;
+
+import lombok.Data;
+
+@Data
+public class DetailedBill {
+    /**
+     * 结束温度
+     */
+    private double endTem;
+    /**
+     * 结束时间
+     */
+    private String endTime;
+    /**
+     * 总费用
+     */
+    private double fee;
+    /**
+     * 费率
+     */
+    private String feeRate;
+    /**
+     * 房间号
+     */
+    private String roomId;
+    /**
+     * 风速
+     */
+    private long speedLevel;
+    /**
+     * 起始温度
+     */
+    private double startTem;
+    /**
+     * 开始时间
+     */
+    private String startTime;
+}

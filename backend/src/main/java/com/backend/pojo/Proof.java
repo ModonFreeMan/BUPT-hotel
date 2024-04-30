@@ -3,37 +3,30 @@ package com.backend.pojo;
 import lombok.Data;
 
 @Data
-public class TotalBill {
+public class Proof {
     /**
-     * 空调费用
+     * 找余
      */
-    private double acFee;
+    private double change;
     /**
      * 顾客姓名
      */
     private String customerName;
     /**
-     * 入住天数
+     * 实缴
      */
-    private long days;
+    private double paid;
     /**
-     * 住宿费
+     * 应缴
      */
-    private double roomFee;
+    private double payable;
     /**
      * 房间号
      */
     private String roomId;
     /**
-     * 房间类型
-     */
-    private String roomType;
-    /**
      * 服务ID
      */
     private String serviceId;
-    /**
-     * 总费用
-     */
-    private double totalFee;
+
 }

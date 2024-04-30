@@ -1,14 +1,39 @@
 package com.backend.pojo;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
 
 @Data
 public class Room {
-    private String roomId;//房间号
-    private String roomType;//房间类型
-    private String checkinDate;//入住时间
-    private String customerId;//入住人身份证
-    private String customerGender;//入住人性别
-    private boolean checkinStatus;//入住状态
+    /**
+     * 入住日期
+     */
+    private String checkinDate;
+    /**
+     * 1入住/0未入住
+     */
+    private boolean checkinStatus;
+    /**
+     * 顾客性别
+     */
+    private String customerGender;
+    /**
+     * 顾客ID
+     */
+    private String customerId;
+    /**
+     * 顾客名称
+     */
+    private String customerName;
+    /**
+     * 房间ID
+     */
+    private String roomId;
+    /**
+     * 房间类型
+     */
+    private String roomType;
+    /**
+     * 服务ID
+     */
+    private String serviceId;
 }

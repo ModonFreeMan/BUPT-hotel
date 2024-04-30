@@ -6,12 +6,26 @@ import lombok.Data;
 
 @Data
 public class Customer {
-    @CustomerId
-    private String customerId;//顾客身份证
+    /**
+     * 电话号码
+     */
     @NotEmpty
-    private String contactNumber;//联系方式
-
-    private String customerGender;//顾客性别
-    private String customerName;//顾客姓名
-    private String roomId;//房间号
+    private String contactNumber;
+    /**
+     * 性别
+     */
+    private String customerGender;
+    /**
+     * 身份证号
+     */
+    @CustomerId
+    private String customerId;
+    /**
+     * 名字
+     */
+    private String customerName;
+    /**
+     * 房间号
+     */
+    private String roomId;
 }

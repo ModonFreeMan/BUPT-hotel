@@ -1,0 +1,27 @@
+package com.backend.pojo;
+
+import lombok.Data;
+
+@Data
+public class CentralACStatus {
+    /**
+     * 0关闭/1开启
+     */
+    private boolean switchStatus;
+    /**
+     * 费率数组,低中高速风费率
+     */
+    private double[] feeRate;
+    /**
+     * 温度下界
+     */
+    private long lowerBound;
+    /**
+     * 0制冷/1制热
+     */
+    private boolean workMode;
+    /**
+     * 温度上界
+     */
+    private long upperBound;
+}

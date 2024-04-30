@@ -12,7 +12,6 @@ public class CustomerIdValidation implements ConstraintValidator<CustomerId,Stri
     //身份证校验规则
     private static final Pattern ID_CARD_PATTERN = Pattern.compile("^\\d{17}(\\d|X|x)$");
     /**
-     *
      * @param value 要校验的数据
      * @return bool类型
      */

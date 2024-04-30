@@ -1,39 +1,38 @@
 package com.backend.controller;
 
-
-import com.backend.components.CustomerServiceMapper;
+import com.backend.pojo.AirConditionerRequest;
 import com.backend.pojo.Result;
-import com.backend.pojo.TotalBill;
-import com.backend.service.ReceptionService;
+import com.backend.service.RoomsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
+@RequestMapping("/rooms")
 public class RoomsController {
-    @Autowired
-    private ReceptionService receptionService;
-
 
     @Autowired
-    private CustomerServiceMapper customerServiceMapper;
+    private RoomsService roomsService;
 
-    @GetMapping("/bill/{serviceId}")
-    public Result getTotalBill(@PathVariable String serviceId){
-        if(receptionService.findById(serviceId)){
-            TotalBill totalBill = receptionService.getBill(serviceId);
-            return Result.success(totalBill);
-        }
-        else{
-            return Result.error("所要查询的服务不存在");
-        }
-    }
-
-    @GetMapping("/detailedbill/{roomId}")
-    public Result getDetailedBill(@PathVariable String roomId){
+    /**
+     * 处理发来的空调请求
+     * @param request 空调请求
+     */
+    @PutMapping("/request")
+    public Result processRequest(@RequestBody AirConditionerRequest request){
+        roomsService.processRequest(request);
         return Result.success();
     }
+
+    /**
+     * 获取当前空调状态信息
+     * @param roomId 房间号
+     * @return 房间空调状态
+     */
+    @GetMapping("/status/{roomId}")
+    public Result getAirConditionerStatus(@PathVariable String roomId){
+        return Result.success(roomsService.getAirConditionerStatus(roomId));
+    }
+
 
 }

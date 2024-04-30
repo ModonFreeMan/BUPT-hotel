@@ -4,16 +4,14 @@ package com.backend.controller;
 import com.backend.components.CustomerServiceMapper;
 import com.backend.pojo.Customer;
 import com.backend.pojo.Result;
-import com.backend.pojo.Room;
 import com.backend.service.ReceptionService;
-import com.backend.utils.SnowFlakeUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/reception")
-public class receptionController {
+public class ReceptionController {
     @Autowired
     private ReceptionService receptionService;
 

@@ -5,5 +5,5 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/manager")
-public class managerController {
+public class ManagerController {
 }

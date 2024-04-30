@@ -3,7 +3,6 @@ package com.backend.controller;
 
 import com.backend.components.CustomerServiceMapper;
 import com.backend.pojo.Result;
-import com.backend.pojo.Room;
 import com.backend.pojo.TotalBill;
 import com.backend.service.ReceptionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-public class roomsController {
+public class RoomsController {
     @Autowired
     private ReceptionService receptionService;
 

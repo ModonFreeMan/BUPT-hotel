@@ -31,6 +31,11 @@ public class CentralACController {
         return Result.success(centralACService.getCentralACStatus());
     }
 
+    /**
+     * 修改中央空调配置
+     * @param centralACStatus 中空空调配置
+     * @return 修改操作成功或失败
+     */
     @PutMapping("/control")
     public Result changeCentralACStatus(@RequestBody CentralACStatus centralACStatus){
         //判断当前所有空调是否全部关闭

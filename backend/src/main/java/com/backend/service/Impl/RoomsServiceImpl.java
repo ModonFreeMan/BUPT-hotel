@@ -21,4 +21,9 @@ public class RoomsServiceImpl implements RoomsService {
     public AirConditionerStatus getAirConditionerStatus(String roomId) {
         return null;
     }
+
+    @Override
+    public boolean isRequestValid(AirConditionerRequest request) {
+        return false;
+    }
 }

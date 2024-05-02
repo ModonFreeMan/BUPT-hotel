@@ -1,6 +1,7 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/bupt_hotel
+    url: jdbc:mysql://localhost:3306/bupt_hotel?serverTimezone=GMT
     username: bupt_hotel
     password: bupt_hotel
     driver-class-name: com.mysql.cj.jdbc.Driver
+

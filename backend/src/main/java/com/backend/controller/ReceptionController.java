@@ -26,7 +26,7 @@ public class ReceptionController {
     @PostMapping("/checkin")
     public Result customerCheckIn(@RequestBody @Validated Customer customer) {
         //检查用户要入住的房间是否可用
-        if (receptionService.isRoomEmpty(customer.getRoomId())) {
+        if (!receptionService.isRoomEmpty(customer.getRoomId())) {
             //如果可用，办理入住登记
             receptionService.checkIn(customer);
             return Result.success();

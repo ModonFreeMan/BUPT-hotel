@@ -12,7 +12,7 @@ import java.util.List;
 @Mapper
 public interface RoomMapper {
 
-    @Insert("insert into Rooms values(#{roomId},#{content},#{checkinDate},#{customerId},#{customerGender},#{checkinStatus})")
+    @Insert("insert into rooms values(#{roomId},#{content},#{checkinDate},#{customerId},#{customerGender},#{checkinStatus})")
     void add(Room room);
 
 
@@ -20,9 +20,11 @@ public interface RoomMapper {
     Room getRoom(String roomId);
 
     @Update("update Rooms " +
-            "set checkinDate = #{checkinDate},customerId=#{customerId},customerGender=#{customerGender},checkinStatus = #{checkinStatus} " +
+            "set customerId=#{customerId},customerGender=#{customerGender},checkinStatus = #{checkinStatus} " +
             "where roomId = #{roomId}" )
     void updateRoom(Room room);
+    //应该不需要checkinDate = #{checkinDate}，修改记录时数据库会自己修改该时间戳
 
-    List<Room> roomList(String roomId);
+    @Select("select * from Rooms")
+    List<Room> roomList();
 }

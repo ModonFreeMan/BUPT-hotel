@@ -7,7 +7,6 @@ create table TotalBills(
     totalFee double,
     primary key(serviceId)
 )
-    ///serviceId要不要自增?那样的话insert的时候就不用给serviceId
 
 
 

@@ -1,6 +1,7 @@
 package com.backend.service.Impl;
 
 import com.backend.mapper.RoomMapper;
+import com.backend.mapper.TotalBillMapper;
 import com.backend.pojo.*;
 import com.backend.service.ReceptionService;
 import com.backend.utils.MybatisUtil;
@@ -22,6 +23,10 @@ public class ReceptionServiceImpl implements ReceptionService {
     @Override
     public void checkIn(Customer customer) {
         //todo：可能还需要向数据库中添加Customer表？
+
+        //todo；应该还需要分配一个serviceId？还是说用了空调服务才收费，应该不是
+        //todo：但是要生成吗？而且服务分段时serviceId一样的话，Bill会冲突吧？
+        //todo：还是说分段的服务放进redis里？
         SqlSession session = mybatisUtil.getSession();
         RoomMapper roomMapper = session.getMapper(RoomMapper.class);
         Room room = new Room();
@@ -63,7 +68,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         RoomMapper roomMapper = session.getMapper(RoomMapper.class);
 
         Room room = roomMapper.getRoom(roomId);
-
+        System.out.println(room);
         return room.isCheckinStatus();
     }
 
@@ -85,18 +90,21 @@ public class ReceptionServiceImpl implements ReceptionService {
         return false;
     }
 
-    @Override
-    public void checkOut(String serviceId) {
-
-    }
-
     /**
      * 待实现
      */
     @Override
     public String getServiceId(Customer customer) {
-        return null;
+        SqlSession session = mybatisUtil.getSession();
+        TotalBillMapper totalBillMapper = session.getMapper(TotalBillMapper.class);
+        return totalBillMapper.getTotalBill(customer.getCustomerId()).getServiceId();
     }
+
+    @Override
+    public void checkOut(String serviceId) {
+
+    }
+
 
     /**
      * 待实现

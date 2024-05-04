@@ -1,9 +1,9 @@
 package com.backend.controller;
 
 
-import com.backend.pojo.Customer;
-import com.backend.pojo.Proof;
+import com.backend.pojo.CheckinRequest;
 import com.backend.pojo.Result;
+import com.backend.pojo.UniqueServiceObject;
 import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,15 +21,15 @@ public class ReceptionController {
 
     /**
      * 办理入住
-     * @param customer 顾客信息
+     * @param checkinRequest 顾客信息
      * @return 办理结果
      */
     @PostMapping("/checkin")
-    public Result customerCheckIn(@RequestBody @Validated Customer customer) {
+    public Result customerCheckIn(@RequestBody @Validated CheckinRequest checkinRequest) {
         //检查用户要入住的房间是否可用
-        if (!receptionService.isRoomEmpty(customer.getRoomId())) {
+        if (!receptionService.isRoomEmpty(checkinRequest.getRoomId())) {
             //如果可用，办理入住登记
-            receptionService.checkIn(customer);
+            receptionService.checkIn(checkinRequest);
             return Result.success();
         } else {
             //如果不可用返回错误信息
@@ -47,25 +47,21 @@ public class ReceptionController {
         return Result.success(receptionService.getAllRoomsInfo());
     }
 
+
     /**
      * 为当前顾客办理结账手续
-     * @param customer 顾客信息
+     * @param
      * @return 返回房间信息
      */
     @PutMapping("/checkout")
-    public Result customerCheckOut(@RequestBody Customer customer) {
-        //检查顾客信息是否存在，如果存在返回true
-        if(receptionService.isCustomerExist(customer)){
-            //如果顾客信息存在，获取本次serviceId
-            String serviceId = receptionService.getServiceId(customer);
-            //根据serviceId办理退房手续
-            receptionService.checkOut(serviceId);
-            return Result.success();
+    public Result customerCheckOut(@RequestParam("roomId") String roomId,@RequestParam("customerId") String customerId) {
+        String serviceId = receptionService.isCustomerExist(roomId,customerId);
+        if(serviceId.equals("")){
+            //该房间不存在或不服务该用户，打印错误信息
+            return Result.error("信息不匹配");
         }
-        else {
-            //否则打印错误信息
-            return Result.error("用户信息不存在");
-        }
+        receptionService.checkOut(roomId,serviceId);
+        return Result.success();
     }
 
     /**
@@ -76,7 +72,9 @@ public class ReceptionController {
     @GetMapping("/details/{roomId}")
     public Result getDetailedBill(@PathVariable String roomId){
         //根据房间号获取服务号
-        String serviceId = roomsService.getServiceId(roomId);
+        String serviceId = receptionService.getServiceId(roomId);
+        if(serviceId.equals(""))
+            return Result.error("信息不匹配");
         //根据服务号获取本次服务的所有详单
         return Result.success(receptionService.getDetailedBills(serviceId));
     }
@@ -89,8 +87,11 @@ public class ReceptionController {
      */
     @PutMapping("/proof")
     public Result getProof(@RequestParam(value="roomId",required=true)String roomId,@RequestParam(value="roomId",required=true)double paid){
-        String serviceId = roomsService.getServiceId(roomId);
+        String serviceId = receptionService.getServiceId(roomId);
+        if(serviceId.equals(""))
+            return Result.error("信息不匹配");
         return Result.success(receptionService.getProof(serviceId,paid));
     }
+
 
 }

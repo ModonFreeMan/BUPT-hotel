@@ -4,18 +4,18 @@ import com.backend.mapper.RoomMapper;
 import com.backend.mapper.TotalBillMapper;
 import com.backend.pojo.*;
 import com.backend.service.ReceptionService;
-import com.backend.utils.MybatisUtil;
+import com.backend.utils.SnowFlakeUtil;
 import jakarta.annotation.Resource;
-import org.apache.ibatis.session.SqlSession;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
 import java.util.List;
 
 @Service
 public class ReceptionServiceImpl implements ReceptionService {
-    @Resource
-    MybatisUtil mybatisUtil;
 
     @Resource
     RoomMapper roomMapper;
@@ -23,25 +23,31 @@ public class ReceptionServiceImpl implements ReceptionService {
     @Resource
     TotalBillMapper totalBillMapper;
 
+    //存储当前不空闲的房间对应的顾客和服务Id
+    static List<UniqueServiceObject> uniqueServiceObjects = new LinkedList<>();
+
     /**
      * 登记入住信息
-     * @param customer 用户对象
+     * @param checkinRequest 用户对象
      */
     @Override
-    public void checkIn(Customer customer) {
-        //todo：可能还需要向数据库中添加Customer表？
-
-        //todo；应该还需要分配一个serviceId？还是说用了空调服务才收费，应该不是
-        //todo：但是要生成吗？而且服务分段时serviceId一样的话，Bill会冲突吧？
-        //todo：还是说分段的服务放进redis里？
+    public void checkIn(CheckinRequest checkinRequest) {
         Room room = new Room();
-        room.setRoomId(customer.getRoomId());
-        room.setCustomerGender(customer.getCustomerGender());
-        room.setCustomerId(customer.getCustomerId());
+        room.setRoomId(checkinRequest.getRoomId());
+        room.setCustomerGender(checkinRequest.getCustomerGender());
+        room.setCustomerId(checkinRequest.getCustomerId());
         room.setCheckinStatus(true);
         try {
             roomMapper.updateRoom(room);
-            //入住成功，开始计费
+            //生成UniqueServiceObject，存到内存里
+            String serviceId = SnowFlakeUtil.getSnowStr();
+            UniqueServiceObject uniqueService = new UniqueServiceObject();
+            uniqueService.setServiceId(serviceId);
+            uniqueService.setCustomerId(checkinRequest.getCustomerId());
+            uniqueService.setRoomId(checkinRequest.getRoomId());
+            uniqueServiceObjects.add(uniqueService);
+
+            //todo：将顾客信息存入CustomersTable
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -50,11 +56,11 @@ public class ReceptionServiceImpl implements ReceptionService {
     }
 
     /**
-     * 待实现
+     * 查询总账单对象
      */
     @Override
     public TotalBill getBill(String serviceId) {
-        return null;
+        return totalBillMapper.getTotalBillByServiceId(serviceId);
     }
 
     /**
@@ -71,12 +77,18 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public boolean isRoomEmpty(String roomId) {
+        Integer id = Integer.getInteger(roomId);
+        if(id <= 0 || id > 20){
+            //暂时设定房间数量为20
+            System.out.println("房间号错误");
+            return false;
+        }
         Room room = roomMapper.getRoom(roomId);
         return room.isCheckinStatus();
     }
 
     /**
-     * 获取所有房间对象
+     * 获取所有数据库房间对象
      */
     @Override
     public List<Room> getAllRoomsInfo() {
@@ -84,24 +96,36 @@ public class ReceptionServiceImpl implements ReceptionService {
     }
 
     /**
-     * 待实现
+     * 查询当前所有服务的房间中是否服务该顾客
      */
     @Override
-    public boolean isCustomerExist(Customer customer) {
-        return false;
+    public String isCustomerExist(String roomId,String customerId) {
+        UniqueServiceObject uniqueService = getUniqueService(roomId);
+        if(uniqueService == null)
+            return "";
+        if(!uniqueService.getCustomerId().equals(customerId))
+            return "";
+        return uniqueService.getServiceId();
     }
 
-    /**
-     * 待实现
-     */
-    @Override
-    public String getServiceId(Customer customer) {
-        return totalBillMapper.getTotalBill(customer.getCustomerId()).getServiceId();
-    }
 
     @Override
-    public void checkOut(String serviceId) {
-
+    public void checkOut(String roomId,String serviceId) {
+        Room room = roomMapper.getRoom(roomId);
+        String inDate = room.getCheckinDate();
+        // 将字符串转换为LocalDateTime对象
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime inTime = LocalDateTime.parse(inDate, formatter);
+        // 获取当前日期和时间
+        LocalDateTime nowTime = LocalDateTime.now();
+        // 计算两个时间之间的日期数
+        Duration duration = Duration.between(inTime, nowTime);
+        long days = duration.toDays();
+        //todo：查询详单
+        TotalBill totalBill = new TotalBill();
+        totalBill.setServiceId(serviceId);
+        totalBill.setDays(days);
+        //todo：填入TotalBills
     }
 
 
@@ -110,6 +134,7 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public List<DetailedBill> getDetailedBills(String serviceId) {
+        //todo:查询详单表
         return null;
     }
 
@@ -118,6 +143,44 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public Proof getProof(String serviceId, double paid) {
+        TotalBill totalBill = totalBillMapper.getTotalBillByServiceId(serviceId);
+
+        Proof proof = new Proof();
+        proof.setServiceId(serviceId);
+        proof.setPaid(paid);
+        proof.setPayable(totalBill.getTotalFee());
+        proof.setChange(paid-totalBill.getTotalFee());
+        proof.setRoomId(totalBill.getRoomId());
+        //todo:根据customerId查询顾客姓名并填入
+        return proof;
+    }
+
+    /**
+     * 根据房间号，从内存中获取ServiceId
+     */
+    @Override
+    public String getServiceId(String roomId) {
+        Integer id = Integer.getInteger(roomId);
+        if(id <= 0 || id > 20){
+            //暂时设定房间数量为20
+            System.out.println("房间号错误");
+            return "";
+        }
+        UniqueServiceObject uniqueService = getUniqueService(roomId);
+        if(uniqueService == null)
+            return "";
+        return uniqueService.getServiceId();
+    }
+
+    /**
+     * 根据房间号获取UniqueServiceObject
+     */
+    public static UniqueServiceObject getUniqueService(String roomId){
+        for (UniqueServiceObject e: uniqueServiceObjects
+        ) {
+            if(e.getRoomId().equals(roomId))
+                return e;
+        }
         return null;
     }
 }

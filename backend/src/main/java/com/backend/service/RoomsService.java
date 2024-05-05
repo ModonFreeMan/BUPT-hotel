@@ -6,9 +6,11 @@ import com.backend.pojo.AirConditionerStatus;
 public interface RoomsService {
     String getServiceId(String roomId);
 
-    void processRequest(AirConditionerRequest request);
 
     AirConditionerStatus getAirConditionerStatus(String roomId);
 
-    boolean isRequestValid(AirConditionerRequest request);
+
+    boolean isTemperatureValid (AirConditionerRequest request);
+
+    void processRequest(AirConditionerRequest request);
 }

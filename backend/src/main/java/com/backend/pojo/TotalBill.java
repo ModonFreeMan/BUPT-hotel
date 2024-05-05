@@ -36,4 +36,14 @@ public class TotalBill {
      * 总费用
      */
     private double totalFee;
+
+
+    public TotalBill() {
+    }
+
+    public TotalBill(String serviceId, CheckinRequest checkinRequest) {
+        this.serviceId = serviceId;
+        this.customerName = checkinRequest.getCustomerName();
+        this.roomId = checkinRequest.getRoomId();
+    }
 }

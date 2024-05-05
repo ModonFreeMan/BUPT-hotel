@@ -27,4 +27,8 @@ public interface RoomMapper {
 
     @Select("select * from Rooms")
     List<Room> roomList();
+
+    //将某个房间状态设为false
+    @Update("update Rooms set checkinStatus = false where roomId = #{roomId}")
+    void setRoomFree(String roomId);
 }

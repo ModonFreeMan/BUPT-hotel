@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface ReceptionService {
     //顾客登记
-    void checkIn(Customer customer);
+    void checkIn(CheckinRequest checkinRequest);
     //获取总账单
     TotalBill getBill(String serviceId);
 
@@ -16,18 +16,14 @@ public interface ReceptionService {
 
     List<Room> getAllRoomsInfo();
 
-    /**
-     * 检查用户信息是否存在
-     * @param customer
-     * @return 存在返回true，不存在返回false
-     */
-    boolean isCustomerExist(Customer customer);
+    String isCustomerExist(String roomId,String customerId);
 
-    void checkOut(String serviceId);
+    void checkOut(String roomId,String serviceId);
 
-    String getServiceId(Customer customer);
 
     List<DetailedBill> getDetailedBills(String serviceId);
 
     Proof getProof(String serviceId, double paid);
+
+    String getServiceId(String roomId);
 }

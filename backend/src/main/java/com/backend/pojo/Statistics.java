@@ -5,9 +5,9 @@ import lombok.Data;
 @Data
 public class Statistics {
     /**
-     * 天数1-7,日报和周报
+     * 统计日期
      */
-    private long period;
+    private long date;
     /**
      * 详单条数
      */

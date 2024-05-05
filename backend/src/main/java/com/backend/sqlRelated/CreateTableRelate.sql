@@ -6,7 +6,7 @@ create table TotalBills(
     contactNumber varchar(20),
     totalFee double,
     primary key(serviceId)
-)
+);
 
 
 

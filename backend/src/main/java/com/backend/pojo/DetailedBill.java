@@ -27,7 +27,7 @@ public class DetailedBill {
     /**
      * 风速
      */
-    private long speedLevel;
+    private int speedLevel;
     /**
      * 起始温度
      */

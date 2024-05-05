@@ -7,19 +7,19 @@ public class Statistics {
     /**
      * 统计日期
      */
-    private long date;
+    private String date;
     /**
      * 详单条数
      */
-    private long detailedBillSum;
+    private int detailedBillSum;
     /**
      * 调度次数
      */
-    private long dispatchSum;
+    private int dispatchSum;
     /**
      * 请求时长（等待的时长）
      */
-    private long requestLength;
+    private int requestLength;
     /**
      * 房间号(-1为酒店总的，其他为每个房间)
      */
@@ -27,15 +27,15 @@ public class Statistics {
     /**
      * 调风次数
      */
-    private long speedChangeSum;
+    private int speedChangeSum;
     /**
      * 开关次数
      */
-    private long switchSum;
+    private int switchSum;
     /**
      * 调温次数
      */
-    private long temChangeSum;
+    private int temChangeSum;
     /**
      * 总费用
      */

@@ -17,7 +17,7 @@ public class TotalBill {
     /**
      * 入住天数
      */
-    private long days;
+    private int days;
     /**
      * 住宿费
      */

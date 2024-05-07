@@ -48,7 +48,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             uniqueServiceObjects.add(uniqueService);
 
             //todo：将顾客信息存入CustomersTable
-
+            //todo：创建一个空调服务对象？？
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -120,7 +120,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         LocalDateTime nowTime = LocalDateTime.now();
         // 计算两个时间之间的日期数
         Duration duration = Duration.between(inTime, nowTime);
-        long days = duration.toDays();
+        int days = (int)duration.toDays();
         //todo：查询详单
         TotalBill totalBill = new TotalBill();
         totalBill.setServiceId(serviceId);

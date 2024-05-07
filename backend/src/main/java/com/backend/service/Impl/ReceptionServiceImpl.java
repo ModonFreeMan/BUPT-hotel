@@ -124,7 +124,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         //todo：查询详单
         TotalBill totalBill = new TotalBill();
         totalBill.setServiceId(serviceId);
-        totalBill.setDays(days);
+        totalBill.setDays((int)days);
         //todo：填入TotalBills
     }
 

@@ -2,9 +2,14 @@ package com.backend.config;
 
 import com.backend.pojo.ACServiceObject;
 import com.backend.pojo.CentralACStatus;
+import com.backend.pojo.Statistics;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
@@ -22,6 +27,27 @@ public class GlobalConfiguration {
         CentralACStatus centralACStatus = new CentralACStatus();
         centralACStatus.setSwitchStatus(false);
         return centralACStatus;
+    }
+
+    @Bean(name = "StatisticsMap")
+    public ConcurrentHashMap <String, Statistics>initStatisticsMap() {
+        // 在这里初始化阶段报表hashmap对象
+        ConcurrentHashMap<String, Statistics> StatisticsMap = new ConcurrentHashMap<>();
+        for(int i=100;i<400;i+=100){
+            for(int j=1;j<11;j++){
+                // 初始化时只用设置房间号和日期
+                String roomId = String.valueOf(i+j);
+                Statistics theStatistics = new Statistics();
+                theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                theStatistics.setRoomId(roomId);
+                StatisticsMap.put(roomId,theStatistics);
+            }
+        }
+        Statistics theStatistics = new Statistics();
+        theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        theStatistics.setRoomId("-1");
+        StatisticsMap.put("-1",theStatistics);
+        return StatisticsMap;
     }
 
 

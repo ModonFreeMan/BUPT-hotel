@@ -13,4 +13,10 @@ public interface RoomsService {
     boolean isTemperatureValid (AirConditionerRequest request);
 
     void processRequest(AirConditionerRequest request);
+
+    boolean enterServiceQueue();
+
+    void leaveServiceQueue(String roomId, int leaveStatus);
+
+    void enterWaitQueue(String roomId);
 }

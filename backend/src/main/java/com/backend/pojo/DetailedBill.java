@@ -1,8 +1,10 @@
 package com.backend.pojo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class DetailedBill {
     /**
      * 结束温度

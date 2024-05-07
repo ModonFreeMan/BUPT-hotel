@@ -28,9 +28,13 @@ public class ACServiceObject {
      */
     private double beforeServiceTem;
     /**
-     * 费率数组,低中高速风费率
+     * 设定风速
      */
-    private double[] feeRate;
+    private long speedLevel;
+    /**
+     * 目标温度
+     */
+    private double targetTem;
     /**
      * 0制冷/1制热
      */

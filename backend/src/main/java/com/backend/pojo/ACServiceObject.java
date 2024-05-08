@@ -30,7 +30,7 @@ public class ACServiceObject {
     /**
      * 设定风速
      */
-    private long speedLevel;
+    private int speedLevel;
     /**
      * 目标温度
      */

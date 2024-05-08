@@ -15,7 +15,7 @@ public class CentralACStatus {
     /**
      * 温度下界
      */
-    private long lowerBound;
+    private int lowerBound;
     /**
      * 0制冷/1制热
      */
@@ -23,5 +23,5 @@ public class CentralACStatus {
     /**
      * 温度上界
      */
-    private long upperBound;
+    private int upperBound;
 }

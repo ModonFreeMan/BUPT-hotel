@@ -25,7 +25,7 @@ public class AirConditionerStatus {
     /**
      * 当前风速
      */
-    private long speedLevel;
+    private int speedLevel;
     /**
      * 开关状态
      */

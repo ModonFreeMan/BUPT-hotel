@@ -6,10 +6,8 @@ import com.backend.pojo.Statistics;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
@@ -25,7 +23,10 @@ public class GlobalConfiguration {
     public CentralACStatus initCentralACStatus() {
         // 在这里初始化中央空调对象
         CentralACStatus centralACStatus = new CentralACStatus();
-        centralACStatus.setSwitchStatus(false);
+        centralACStatus.setSwitchStatus(true);
+        centralACStatus.setLowerBound(18);
+        centralACStatus.setUpperBound(28);
+        centralACStatus.setWorkMode(false);
         return centralACStatus;
     }
 

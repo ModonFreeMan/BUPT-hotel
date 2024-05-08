@@ -8,7 +8,7 @@ public class AirConditionerRequest {
     /**
      * 风速
      */
-    private long speedLevel;
+    private int speedLevel;
     /**
      * 0关/1开
      */

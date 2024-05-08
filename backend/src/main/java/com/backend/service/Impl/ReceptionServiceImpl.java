@@ -1,6 +1,7 @@
 package com.backend.service.Impl;
 
 import com.backend.mapper.CustomerMapper;
+import com.backend.mapper.DetailedBillMapper;
 import com.backend.mapper.RoomMapper;
 import com.backend.mapper.TotalBillMapper;
 import com.backend.pojo.*;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ReceptionServiceImpl implements ReceptionService {
@@ -26,6 +28,15 @@ public class ReceptionServiceImpl implements ReceptionService {
 
     @Resource
     TotalBillMapper totalBillMapper;
+
+    @Resource
+    DetailedBillMapper detailedBillMapper;
+
+    @Resource
+    CentralACStatus centralACStatus; //中央空调状态
+
+    @Resource(lookup = "ACServiceMap")
+    ConcurrentHashMap<String, ACServiceObject> acServiceObjects; //房间空调状态
 
     //存储当前不空闲的房间对应的顾客和服务Id
     static List<UniqueServiceObject> uniqueServiceObjects = new LinkedList<>();
@@ -53,7 +64,14 @@ public class ReceptionServiceImpl implements ReceptionService {
             Customer customer = new Customer(checkinRequest.getContactNumber(),checkinRequest.getCustomerGender(),checkinRequest.getCustomerId(),checkinRequest.getCustomerName());
             customerMapper.insertCustomer(customer);
 
-            //todo：创建一个空调服务对象？？
+            //每次入住时创建新的空调服务对象
+            ACServiceObject acServiceObject = new ACServiceObject();
+            acServiceObject.setSwitchStatus(false);//空调初始情况为关机
+            acServiceObject.setCurTem(0); //todo:从房间初始温度获得
+            acServiceObject.setSpeedLevel(1); //空调初始风速为中速
+            acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
+            acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
+
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -68,13 +86,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         return totalBillMapper.getTotalBillByServiceId(serviceId);
     }
 
-    /**
-     * todo 待实现
-     */
-    @Override
-    public boolean findById(String serviceId) {
-        return false;
-    }
+
 
     /**
      * 查询房间是否空闲
@@ -126,6 +138,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         totalBill.setRoomId(roomId);
         totalBill.setCustomerName(customerMapper.selectNameById(uniqueServiceObject.getCustomerId()));
         Room room = roomMapper.getRoom(roomId);
+        //计算入住时间。  todo：可能要靠开关机次数进行修改了！！
         String inDate = room.getCheckinDate();
         // 将字符串转换为LocalDateTime对象
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -137,21 +150,28 @@ public class ReceptionServiceImpl implements ReceptionService {
         int days = (int)duration.toDays();
         totalBill.setDays(days);
         totalBill.setRoomType(room.getRoomType());
+        //todo:根据入住天数和房间每日费用计算入住费用
+        double roomFee = 0;
+        totalBill.setRoomFee(roomFee);
 
 
-        //todo：查询详单并获取所有费用
-
+        List<DetailedBill> detailedBills = getDetailedBills(serviceId);
+        double acFee = 0;
+        for (DetailedBill d: detailedBills) {
+            acFee += d.getFee();
+        }
+        totalBill.setAcFee(acFee);
+        totalBill.setTotalFee(roomFee+acFee);
         totalBillMapper.insertBill(totalBill);
     }
 
 
     /**
-     * todo 待实现
+     * 查询该次服务下所有详单
      */
     @Override
     public List<DetailedBill> getDetailedBills(String serviceId) {
-        //todo:查询详单表
-        return null;
+        return detailedBillMapper.getDetailedBills(serviceId);
     }
 
     /**
@@ -202,6 +222,9 @@ public class ReceptionServiceImpl implements ReceptionService {
         return null;
     }
 
+    /**
+     * 根据服务号删除UniqueServiceObject
+     */
     public static void deleteUniqueService(String serviceId){
         for (UniqueServiceObject e: uniqueServiceObjects
         ) {

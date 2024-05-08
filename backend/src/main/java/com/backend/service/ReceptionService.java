@@ -10,8 +10,6 @@ public interface ReceptionService {
     //获取总账单
     TotalBill getBill(String serviceId);
 
-    boolean findById(String serviceId);
-
     boolean isRoomEmpty(String roomId);
 
     List<Room> getAllRoomsInfo();

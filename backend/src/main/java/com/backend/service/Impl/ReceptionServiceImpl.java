@@ -168,7 +168,8 @@ public class ReceptionServiceImpl implements ReceptionService {
         proof.setChange(paid-totalBill.getTotalFee());
         proof.setRoomId(totalBill.getRoomId());
         proof.setCustomerName(totalBill.getCustomerName());
-        //todo:删去对应的UniqueObject
+        //删去对应的UniqueObject
+        deleteUniqueService(serviceId);
         return proof;
     }
 
@@ -199,5 +200,15 @@ public class ReceptionServiceImpl implements ReceptionService {
                 return e;
         }
         return null;
+    }
+
+    public static void deleteUniqueService(String serviceId){
+        for (UniqueServiceObject e: uniqueServiceObjects
+        ) {
+            if(e.getServiceId().equals(serviceId)){
+                uniqueServiceObjects.remove(e);
+                break;
+            }
+        }
     }
 }

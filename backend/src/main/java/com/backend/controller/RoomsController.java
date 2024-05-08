@@ -21,9 +21,10 @@ public class RoomsController {
     @PutMapping("/request")
     public Result processRequest(@RequestBody AirConditionerRequest request){
         if(!roomsService.isTemperatureValid(request)){
-            return Result.error("空调温度范围不合法或者请求无效");
+            return Result.error("空调温度范围不合法");
         }
-        roomsService.processRequest(request);
+        if(roomsService.isNeedProcess(request))// 合法且需要处理
+            roomsService.processRequest(request);
         return Result.success();
     }
 

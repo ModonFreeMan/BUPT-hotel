@@ -1,7 +1,9 @@
 package com.backend.service.Impl;
 
+import com.backend.mapper.DetailedBillMapper;
 import com.backend.pojo.*;
 import com.backend.service.RoomsService;
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,19 +30,9 @@ public class RoomsServiceImpl implements RoomsService {
     @Qualifier("StatisticsMap")
     private ConcurrentHashMap<String, Statistics> statisticsMap;
 
+    @Resource
+    DetailedBillMapper detailedBillMapper;
 
-    @Override
-    public String getServiceId(String roomId) {
-        String serviceId;
-        try {
-            serviceId = Objects.requireNonNull(ReceptionServiceImpl.getUniqueService(roomId),
-                    "Service for roomId " + roomId + " cannot be null").getServiceId();
-        } catch (Exception e) {
-            // 错误serviceid，需要在外部自行处理
-            serviceId = "-1";
-        }
-        return serviceId;
-    }
 
     // 无界等待队列，满足先进先出，需要自行判断优先级再取出
     // 之所以采用数组，不采用set是因为丢失了进入顺序，不采用queue是因为无法随机存取
@@ -52,7 +44,7 @@ public class RoomsServiceImpl implements RoomsService {
     // 服务队列的大小，常量
     private final static int SERVICE_QUEUE_SIZE = 3;
 
-    // 空调调温速度，与风速有关，自定义,中速情况下每分钟0.6度，五分钟3度，十分钟6度
+    // 空调调温速度，与风速有关，自定义,中速情况下每分钟0.5度
     private final static double[] attemperation = {0.3, 0.5, 1};
 
     // 服务队列
@@ -71,17 +63,20 @@ public class RoomsServiceImpl implements RoomsService {
 
     @Override
     public boolean isTemperatureValid(AirConditionerRequest request) {
-        // 从关机到关机状态的请求不执行，因为已经关机所以风速、目标温度之类的request信息都是无意义，不用改变什么
-        if (!request.isSwitchStatus() && !ACServiceMap.get(request.getRoomId()).isSwitchStatus()) {
-            return false;
-        }
         double targetTem = request.getTargetTem();
+        // 温度不合理两种情况，超出中央空调范围，或者不符合中央空调运行模式
         if (targetTem <= centralACStatus.getUpperBound() && targetTem >= centralACStatus.getLowerBound()) {
             double temper_differ = targetTem - ACServiceMap.get(request.getRoomId()).getCurTem();
             return (temper_differ >= 0 && centralACStatus.isWorkMode())
                     || (temper_differ <= 0 && !centralACStatus.isWorkMode());
         }
         return false;
+    }
+
+    @Override
+    public boolean isNeedProcess(AirConditionerRequest request) {
+        // 从关机到关机状态的请求不执行，因为已经关机所以风速、目标温度之类的request信息都是无意义，不用改变什么
+        return request.isSwitchStatus() || ACServiceMap.get(request.getRoomId()).isSwitchStatus();
     }
 
     @Override
@@ -181,7 +176,7 @@ public class RoomsServiceImpl implements RoomsService {
                 LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),// 风速直接匹配费率下标
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60 * centralACStatus.getFeeRate()[ACServiceMap.get(roomId).getSpeedLevel()];
         // 通知信息计算处理详单
-        // todo:告诉消息队列，生成详单
+        // todo:生成详单,写入数据库
 //        new DetailedBill(ACServiceMap.get(roomId).getCurTem(), LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),nowFee,centralACStatus.getFeeRate(),roomId,ACServiceMap.get(roomId).getSpeedLevel(),ACServiceMap.get(roomId).getBeforeServiceTem(),ACServiceMap.get(roomId).getWaiting_queue_timestamp());
         // 增加currentFee，和TotalFee
         ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);

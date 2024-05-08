@@ -47,5 +47,13 @@ public class ACServiceObject {
      * 本次开机费用
      */
     private double currentFee;
+    /*
+    *入住天数
+     */
+    private int days;
+    /*
+    * 本次调度已产生的费用
+    * */
+    private double oneFee;
 
 }

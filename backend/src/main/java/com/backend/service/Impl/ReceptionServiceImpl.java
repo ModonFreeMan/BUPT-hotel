@@ -1,5 +1,6 @@
 package com.backend.service.Impl;
 
+import com.backend.mapper.CustomerMapper;
 import com.backend.mapper.RoomMapper;
 import com.backend.mapper.TotalBillMapper;
 import com.backend.pojo.*;
@@ -19,6 +20,9 @@ public class ReceptionServiceImpl implements ReceptionService {
 
     @Resource
     RoomMapper roomMapper;
+
+    @Resource
+    CustomerMapper customerMapper;
 
     @Resource
     TotalBillMapper totalBillMapper;
@@ -46,8 +50,9 @@ public class ReceptionServiceImpl implements ReceptionService {
             uniqueService.setCustomerId(checkinRequest.getCustomerId());
             uniqueService.setRoomId(checkinRequest.getRoomId());
             uniqueServiceObjects.add(uniqueService);
+            Customer customer = new Customer(checkinRequest.getContactNumber(),checkinRequest.getCustomerGender(),checkinRequest.getCustomerId(),checkinRequest.getCustomerName());
+            customerMapper.insertCustomer(customer);
 
-            //todo：将顾客信息存入CustomersTable
             //todo：创建一个空调服务对象？？
         } catch (Exception e) {
             e.printStackTrace();
@@ -64,7 +69,7 @@ public class ReceptionServiceImpl implements ReceptionService {
     }
 
     /**
-     * 待实现
+     * todo 待实现
      */
     @Override
     public boolean findById(String serviceId) {
@@ -111,6 +116,15 @@ public class ReceptionServiceImpl implements ReceptionService {
 
     @Override
     public void checkOut(String roomId,String serviceId) {
+        UniqueServiceObject uniqueServiceObject = getUniqueService(roomId);
+        if(uniqueServiceObject == null){
+            System.out.println("退房时出错！不服务该用户");
+            return;
+        }
+        TotalBill totalBill = new TotalBill();
+        totalBill.setServiceId(serviceId);
+        totalBill.setRoomId(roomId);
+        totalBill.setCustomerName(customerMapper.selectNameById(uniqueServiceObject.getCustomerId()));
         Room room = roomMapper.getRoom(roomId);
         String inDate = room.getCheckinDate();
         // 将字符串转换为LocalDateTime对象
@@ -121,16 +135,18 @@ public class ReceptionServiceImpl implements ReceptionService {
         // 计算两个时间之间的日期数
         Duration duration = Duration.between(inTime, nowTime);
         int days = (int)duration.toDays();
-        //todo：查询详单
-        TotalBill totalBill = new TotalBill();
-        totalBill.setServiceId(serviceId);
-        totalBill.setDays((int)days);
-        //todo：填入TotalBills
+        totalBill.setDays(days);
+        totalBill.setRoomType(room.getRoomType());
+
+
+        //todo：查询详单并获取所有费用
+
+        totalBillMapper.insertBill(totalBill);
     }
 
 
     /**
-     * 待实现
+     * todo 待实现
      */
     @Override
     public List<DetailedBill> getDetailedBills(String serviceId) {
@@ -139,7 +155,7 @@ public class ReceptionServiceImpl implements ReceptionService {
     }
 
     /**
-     * 待实现
+     * 返回凭据对象
      */
     @Override
     public Proof getProof(String serviceId, double paid) {
@@ -151,7 +167,8 @@ public class ReceptionServiceImpl implements ReceptionService {
         proof.setPayable(totalBill.getTotalFee());
         proof.setChange(paid-totalBill.getTotalFee());
         proof.setRoomId(totalBill.getRoomId());
-        //todo:根据customerId查询顾客姓名并填入
+        proof.setCustomerName(totalBill.getCustomerName());
+        //todo:删去对应的UniqueObject
         return proof;
     }
 

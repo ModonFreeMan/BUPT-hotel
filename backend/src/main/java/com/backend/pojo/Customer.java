@@ -1,8 +1,12 @@
 package com.backend.pojo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Customer {
     /**
      * 电话号码

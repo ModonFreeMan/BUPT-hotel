@@ -231,28 +231,30 @@ public class RoomsServiceImpl implements RoomsService {
     @Scheduled(fixedRate = 10000) // 每10s检查一次
     public void scheduledTask() {
         // 温度更新
-        for (String roomId : service_queue) {
-            // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-            double Temperature_variation = attemperation[ ACServiceMap.get(roomId).getSpeedLevel()] / 6;
-            // 先判断是否关机的，直接移出
-            if (!ACServiceMap.get(roomId).isSwitchStatus()) {
-                service_queue.remove(roomId);
-                leaveServiceQueue(roomId, 0);
-            } else if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
-                leaveServiceQueue(roomId, 1);
-            } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
-                // 温度到达,先更新温度再安然退场
-                ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getTargetTem());
-                leaveServiceQueue(roomId, 2);
-            } else {// 先更新温度
-                if (ACServiceMap.get(roomId).getTargetTem() > ACServiceMap.get(roomId).getCurTem())
-                    ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() + Temperature_variation);
-                else
-                    ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
-                // 如果时间片到达
-                if ((double) Duration.between(LocalDateTime.now(), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 5d) {
-                    leaveServiceQueue(roomId, 3);
+        synchronized (service_queue) {
+            for (String roomId : service_queue) {
+                // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
+                double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()] / 6;
+                // 先判断是否关机的，直接移出
+                if (!ACServiceMap.get(roomId).isSwitchStatus()) {
+                    service_queue.remove(roomId);
+                    leaveServiceQueue(roomId, 0);
+                } else if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
+                    leaveServiceQueue(roomId, 1);
+                } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
+                    // 温度到达,先更新温度再安然退场
+                    ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getTargetTem());
+                    leaveServiceQueue(roomId, 2);
+                } else {// 先更新温度
+                    if (ACServiceMap.get(roomId).getTargetTem() > ACServiceMap.get(roomId).getCurTem())
+                        ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() + Temperature_variation);
+                    else
+                        ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
+                    // 如果时间片到达
+                    if ((double) Duration.between(LocalDateTime.now(), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 2d) {// 暂且时间片为两分钟
+                        leaveServiceQueue(roomId, 3);
+                    }
                 }
             }
         }

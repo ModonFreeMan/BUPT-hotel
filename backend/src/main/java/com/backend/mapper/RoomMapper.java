@@ -12,7 +12,7 @@ import java.util.List;
 @Mapper
 public interface RoomMapper {
 
-    @Insert("insert into rooms values(#{roomId},#{content},#{checkinDate},#{customerId},#{customerGender},#{checkinStatus})")
+    @Insert("insert into rooms values(#{roomId},#{customerId},#{customerGender},#{checkinStatus})")
     void add(Room room);
 
 

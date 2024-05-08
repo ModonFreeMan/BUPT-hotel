@@ -136,6 +136,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         TotalBill totalBill = new TotalBill();
         totalBill.setServiceId(serviceId);
         totalBill.setRoomId(roomId);
+        totalBill.setCustomerId(uniqueServiceObject.getCustomerId());
         totalBill.setCustomerName(customerMapper.selectNameById(uniqueServiceObject.getCustomerId()));
         Room room = roomMapper.getRoom(roomId);
         //计算入住时间。  todo：可能要靠开关机次数进行修改了！！

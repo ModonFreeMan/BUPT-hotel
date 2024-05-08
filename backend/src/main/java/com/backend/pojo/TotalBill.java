@@ -11,6 +11,10 @@ public class TotalBill {
      */
     private double acFee;
     /**
+     * 顾客身份证
+     */
+    private String customerId;
+    /**
      * 顾客姓名
      */
     private String customerName;

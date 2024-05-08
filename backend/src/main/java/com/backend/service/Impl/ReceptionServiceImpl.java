@@ -94,7 +94,7 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public boolean isRoomEmpty(String roomId) {
-        Integer id = Integer.getInteger(roomId);
+        int id = Integer.parseInt(roomId);
         if(id <= 0 || id > 20){
             //暂时设定房间数量为20
             System.out.println("房间号错误");

@@ -21,7 +21,7 @@ public class DetailedBill {
     /**
      * 费率
      */
-    private String feeRate;
+    private double rate;
     /**
      * 房间号
      */
@@ -35,7 +35,15 @@ public class DetailedBill {
      */
     private double startTem;
     /**
-     * 开始时间
+     * 开始时间,开始服务的时间
      */
     private String startTime;
+    /**
+     * 请求时间
+     */
+    private String requestTime;
+    /**
+     * 服务时长
+     */
+    private String serviceLength;
 }

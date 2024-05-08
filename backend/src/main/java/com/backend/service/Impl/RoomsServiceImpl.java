@@ -2,13 +2,13 @@ package com.backend.service.Impl;
 
 import com.backend.mapper.DetailedBillMapper;
 import com.backend.pojo.*;
+import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -41,6 +41,9 @@ public class RoomsServiceImpl implements RoomsService {
     @Qualifier("FiveRoomDetailsMap")
     HashMap<String,FiveRoomDetail> fiveRoomDetailsMap;
 
+    @Resource
+    ReceptionService receptionService;
+
 
     // 无界等待队列，满足先进先出，需要自行判断优先级再取出
     // 之所以采用数组，不采用set是因为丢失了进入顺序，不采用queue是因为无法随机存取
@@ -53,7 +56,7 @@ public class RoomsServiceImpl implements RoomsService {
     private final static int SERVICE_QUEUE_SIZE = 3;
 
     // 空调调温速度，与风速有关，自定义,中速情况下每分钟0.5度
-    private final static double[] attemperation = {0.3, 0.5, 1};
+    private final static double[] attemperation = {1.0/3.0, 0.5, 1};
 
     // 服务队列
     private final List<String> service_queue = Collections.synchronizedList(new ArrayList<>(SERVICE_QUEUE_SIZE));
@@ -187,12 +190,17 @@ public class RoomsServiceImpl implements RoomsService {
         // 首先字面意思，移出服务队列先
         service_queue.remove(roomId);
         // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
-        double nowFee = (double) Duration.between(LocalDateTime.now(),
-                LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),// 风速直接匹配费率下标
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60 * centralACStatus.getFeeRate()[ACServiceMap.get(roomId).getSpeedLevel()];
+        double nowFee = (ACServiceMap.get(roomId).getCurTem()-ACServiceMap.get(roomId).getBeforeServiceTem())*centralACStatus.getRate();
         // 通知信息计算处理详单
-        // todo:生成详单,写入数据库
-//        new DetailedBill(ACServiceMap.get(roomId).getCurTem(), LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),nowFee,centralACStatus.getFeeRate(),roomId,ACServiceMap.get(roomId).getSpeedLevel(),ACServiceMap.get(roomId).getBeforeServiceTem(),ACServiceMap.get(roomId).getWaiting_queue_timestamp());
+        Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),LocalDateTime.now());
+        detailedBillMapper.insertBill(receptionService.getServiceId(roomId),
+                ACServiceMap.get(roomId).getCurTem(),
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                nowFee,centralACStatus.getRate(),roomId,
+                ACServiceMap.get(roomId).getSpeedLevel(),ACServiceMap.get(roomId).getBeforeServiceTem(),
+                ACServiceMap.get(roomId).getService_queue_timestamp(),
+                ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
+                String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
         // 增加currentFee，和TotalFee
         ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);
         ACServiceMap.get(roomId).setTotalFee(ACServiceMap.get(roomId).getTotalFee() + nowFee);
@@ -205,10 +213,12 @@ public class RoomsServiceImpl implements RoomsService {
             case 0:// 关机移出
                 // 本次开机的费用结算完毕
                 ACServiceMap.get(roomId).setCurrentFee(0d);
+                recoveryQueue.add(roomId);
                 break;
             case 1:// 新的请求已抵达，前面的请求作废
                 break;
             case 2:// 温度到达，无额外处理
+                recoveryQueue.add(roomId);
                 break;
             case 3:// 时间片到达
                 // 只有这种情况还要重新加入等待队列
@@ -221,6 +231,7 @@ public class RoomsServiceImpl implements RoomsService {
 
     @Override
     public void enterWaitQueue(String roomId) {
+        recoveryQueue.remove(roomId);
         // 更新加入等待队列的时间戳，是因为后面详单需要该信息
         ACServiceMap.get(roomId).setWaiting_queue_timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
@@ -243,13 +254,13 @@ public class RoomsServiceImpl implements RoomsService {
         enterServiceQueue();
     }
 
-    @Scheduled(fixedRate = 10000) // 每10s检查一次
+    @Scheduled(fixedRate = 10000) // 每6s检查一次
     public void scheduledTask() {
         // 温度更新
         synchronized (service_queue) {
             for (String roomId : service_queue) {
                 // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-                double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()] / 6;
+                double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()] / 10;
                 // 先判断是否关机的，直接移出
                 if (!ACServiceMap.get(roomId).isSwitchStatus()) {
                     service_queue.remove(roomId);

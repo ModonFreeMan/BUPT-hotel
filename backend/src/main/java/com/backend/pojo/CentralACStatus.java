@@ -11,7 +11,7 @@ public class CentralACStatus {
     /**
      * 费率数组,低中高速风费率,下标分别是0，1，2，可直接用风速作为下标
      */
-    private double[] feeRate;
+    private double rate;
     /**
      * 温度下界
      */

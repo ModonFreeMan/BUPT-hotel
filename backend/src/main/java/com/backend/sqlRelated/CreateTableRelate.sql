@@ -13,11 +13,13 @@ create table detailedbills
         primary key,
     endTem     double       null,
     fee        double       null,
-    feeRate    varchar(30)  null,
+    rate       double       null,
     roomId     varchar(30)  null,
     speedLevel int          null,
     startTem   double       null,
-    startTime  datetime     null
+    startTime  datetime     null,
+    requestTime datetime    null,
+    serviceLength varchar(30)  null
 );
 
 create table rooms

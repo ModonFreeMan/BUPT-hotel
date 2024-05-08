@@ -43,6 +43,7 @@ public class GlobalConfiguration {
         centralACStatus.setLowerBound(18);
         centralACStatus.setUpperBound(28);
         centralACStatus.setWorkMode(false);
+        centralACStatus.setRate(1d);
         return centralACStatus;
     }
 

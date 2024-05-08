@@ -35,7 +35,7 @@ public class ReceptionServiceImpl implements ReceptionService {
     @Resource
     CentralACStatus centralACStatus; //中央空调状态
 
-    @Resource(lookup = "ACServiceMap")
+    @Resource(name = "ACServiceMap")
     ConcurrentHashMap<String, ACServiceObject> acServiceObjects; //房间空调状态
 
     //存储当前不空闲的房间对应的顾客和服务Id

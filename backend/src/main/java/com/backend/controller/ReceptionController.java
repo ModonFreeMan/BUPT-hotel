@@ -6,6 +6,7 @@ import com.backend.pojo.Result;
 import com.backend.pojo.UniqueServiceObject;
 import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +14,10 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/reception")
 public class ReceptionController {
-    @Autowired
+    @Resource
     private ReceptionService receptionService;
 
-    @Autowired
+    @Resource
     private RoomsService roomsService;
 
     /**

@@ -46,7 +46,6 @@ public class CentralACController {
         else {
             return Result.error("有空调正在运行，无法修改中央空调设置");
         }
-
     }
 
 

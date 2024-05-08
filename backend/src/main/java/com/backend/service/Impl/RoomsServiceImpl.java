@@ -12,11 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class RoomsServiceImpl implements RoomsService {
@@ -45,7 +47,7 @@ public class RoomsServiceImpl implements RoomsService {
 
     @Autowired
     @Qualifier("FiveRoomDetailsMap")
-    HashMap<String,FiveRoomDetail> fiveRoomDetailsMap;
+    HashMap<String, FiveRoomDetail> fiveRoomDetailsMap;
 
     @Resource
     ReceptionService receptionService;
@@ -54,18 +56,18 @@ public class RoomsServiceImpl implements RoomsService {
     // 无界等待队列，满足先进先出，需要自行判断优先级再取出
     // 之所以采用数组，不采用set是因为丢失了进入顺序，不采用queue是因为无法随机存取
     // 按照优先级分为三个等待队列,1优先级最高
-    private final List<String> waiting_queue1 = Collections.synchronizedList(new ArrayList<>());
-    private final List<String> waiting_queue2 = Collections.synchronizedList(new ArrayList<>());
-    private final List<String> waiting_queue3 = Collections.synchronizedList(new ArrayList<>());
+    private final CopyOnWriteArrayList<String> waiting_queue1 = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<String> waiting_queue2 = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<String> waiting_queue3 = new CopyOnWriteArrayList<>();
 
     // 服务队列的大小，常量
     private final static int SERVICE_QUEUE_SIZE = 3;
 
     // 空调调温速度，与风速有关，自定义,中速情况下每分钟0.5度
-    private final static double[] attemperation = {1.0/3.0, 0.5, 1};
+    private final static double[] attemperation = {1.0 / 3.0, 0.5, 1};
 
     // 服务队列
-    private final List<String> service_queue = Collections.synchronizedList(new ArrayList<>(SERVICE_QUEUE_SIZE));
+    private final CopyOnWriteArrayList<String> service_queue = new CopyOnWriteArrayList<>();
 
 
     @Override
@@ -118,7 +120,7 @@ public class RoomsServiceImpl implements RoomsService {
                                                 ACServiceMap.get(
                                                         request.getRoomId()
                                                 ).getDays()
-                                        ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                        ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                 LocalDateTime.parse(
                                         room_message.getWaiting_queue_timestamp(),
                                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -129,8 +131,8 @@ public class RoomsServiceImpl implements RoomsService {
                     }
                     room_message.setCurrentFee(0d);
                 }
-                ACServiceMap.get(request.getRoomId()).setDays(ACServiceMap.get(request.getRoomId()).getDays()+1);
-                for (Statistics statistics: statisticsMap.values()) {
+                ACServiceMap.get(request.getRoomId()).setDays(ACServiceMap.get(request.getRoomId()).getDays() + 1);
+                for (Statistics statistics : statisticsMap.values()) {
                     statisticsMapper.add(statistics);// 每个数据都写入数据库中
                     // 第二天数据的初始化
                     // 更新开始记录的日期，因为是一天的，所以不记录时分秒
@@ -191,7 +193,7 @@ public class RoomsServiceImpl implements RoomsService {
             // 修改加入服务队列的时间戳，修改进入服务队列时的温度
             ACServiceObject room_message = ACServiceMap.get(roomId);
             room_message.setService_queue_timestamp(timeTrans(
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),ACServiceMap.get(roomId).getDays()
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()
             ));
             room_message.setBeforeServiceTem(room_message.getCurTem());
             // 增加今天阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
@@ -200,7 +202,7 @@ public class RoomsServiceImpl implements RoomsService {
                             timeTrans(
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                     ACServiceMap.get(roomId).getDays()
-                            ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                            ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     LocalDateTime.parse(
                             room_message.getWaiting_queue_timestamp(),
                             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -222,19 +224,19 @@ public class RoomsServiceImpl implements RoomsService {
         // 首先字面意思，移出服务队列先
         service_queue.remove(roomId);
         // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
-        double nowFee = (ACServiceMap.get(roomId).getCurTem()-ACServiceMap.get(roomId).getBeforeServiceTem())*centralACStatus.getRate();
+        double nowFee = (ACServiceMap.get(roomId).getCurTem() - ACServiceMap.get(roomId).getBeforeServiceTem()) * centralACStatus.getRate();
         // 通知信息计算处理详单
         Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 LocalDateTime.parse(
-                timeTrans(
-                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                        ACServiceMap.get(roomId).getDays()
-                ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                        timeTrans(
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                ACServiceMap.get(roomId).getDays()
+                        ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         detailedBillMapper.insertBill(receptionService.getServiceId(roomId),
                 ACServiceMap.get(roomId).getCurTem(),
-                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),ACServiceMap.get(roomId).getDays()),
-                nowFee,centralACStatus.getRate(),roomId,
-                ACServiceMap.get(roomId).getSpeedLevel(),ACServiceMap.get(roomId).getBeforeServiceTem(),
+                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()),
+                nowFee, centralACStatus.getRate(), roomId,
+                ACServiceMap.get(roomId).getSpeedLevel(), ACServiceMap.get(roomId).getBeforeServiceTem(),
                 ACServiceMap.get(roomId).getService_queue_timestamp(),
                 ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
                 String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
@@ -270,7 +272,7 @@ public class RoomsServiceImpl implements RoomsService {
     public void enterWaitQueue(String roomId) {
         recoveryQueue.remove(roomId);
         // 更新加入等待队列的时间戳，是因为后面详单需要该信息
-        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),ACServiceMap.get(roomId).getDays()));
+        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()));
         // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
         waiting_queue1.remove(roomId);
         waiting_queue2.remove(roomId);
@@ -302,71 +304,61 @@ public class RoomsServiceImpl implements RoomsService {
     @Scheduled(fixedRate = 10000) // 每6s检查一次
     public void scheduledTask() {
         // 温度更新
-        synchronized (service_queue) {
-            for (String roomId : service_queue) {
-                // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-                double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()] / 10;
-                // 先判断是否关机的，直接移出
-                if (!ACServiceMap.get(roomId).isSwitchStatus()) {
-                    service_queue.remove(roomId);
-                    leaveServiceQueue(roomId, 0);
-                } else if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
-                    leaveServiceQueue(roomId, 1);
-                } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
-                    // 温度到达,先更新温度再安然退场
-                    ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getTargetTem());
-                    leaveServiceQueue(roomId, 2);
-                } else {// 先更新温度
-                    if (ACServiceMap.get(roomId).getTargetTem() > ACServiceMap.get(roomId).getCurTem())
-                        ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() + Temperature_variation);
-                    else
-                        ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
-                    // 如果时间片到达
-                    if ((double) Duration.between(
-                            LocalDateTime.parse(
-                            timeTrans(
-                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                    ACServiceMap.get(roomId).getDays()
-                            ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
-                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 2d) {// 暂且时间片为两分钟
-                        leaveServiceQueue(roomId, 3);
-                    }
+        for (String roomId : service_queue) {
+            // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
+            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()] / 10;
+            // 先判断是否关机的，直接移出
+            if (!ACServiceMap.get(roomId).isSwitchStatus()) {
+                service_queue.remove(roomId);
+                leaveServiceQueue(roomId, 0);
+            } else if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
+                leaveServiceQueue(roomId, 1);
+            } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
+                // 温度到达,先更新温度再安然退场
+                ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getTargetTem());
+                leaveServiceQueue(roomId, 2);
+            } else {// 先更新温度
+                if (ACServiceMap.get(roomId).getTargetTem() > ACServiceMap.get(roomId).getCurTem())
+                    ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() + Temperature_variation);
+                else
+                    ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
+                // 如果时间片到达
+                if ((double) Duration.between(
+                        LocalDateTime.parse(
+                                timeTrans(
+                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                        ACServiceMap.get(roomId).getDays()
+                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 2d) {// 暂且时间片为两分钟
+                    leaveServiceQueue(roomId, 3);
                 }
             }
         }
     }
 
     @Scheduled(fixedRate = 6000)
-    void temperatureRecovery(){
-        synchronized (recoveryQueue){
-            for (String roomId:recoveryQueue){
-                double curTem = ACServiceMap.get(roomId).getCurTem();
-                double initialTem = fiveRoomDetailsMap.get(roomId).getInitialTem();
-                //如果当前温度小于初始化温度
-                if(curTem < initialTem){
-                    if(curTem + 0.5 >= initialTem){
-                        curTem = initialTem;
-                        ACServiceMap.get(roomId).setCurTem(curTem);
-                    }
-                    else {
-                        curTem += 0.5;
-                        ACServiceMap.get(roomId).setCurTem(curTem);
-                    }
+    void temperatureRecovery() {
+        for (String roomId : recoveryQueue) {
+            double curTem = ACServiceMap.get(roomId).getCurTem();
+            double initialTem = fiveRoomDetailsMap.get(roomId).getInitialTem();
+            //如果当前温度小于初始化温度
+            if (curTem < initialTem) {
+                if (curTem + 0.5 >= initialTem) {
+                    curTem = initialTem;
+                    ACServiceMap.get(roomId).setCurTem(curTem);
+                } else {
+                    curTem += 0.5;
+                    ACServiceMap.get(roomId).setCurTem(curTem);
                 }
-                else {
-                    if(curTem - 0.5 <= initialTem){
-                        curTem = initialTem;
-                        ACServiceMap.get(roomId).setCurTem(curTem);
-                    }
-                    else {
-                        curTem -= 0.5;
-                        ACServiceMap.get(roomId).setCurTem(curTem);
-                    }
+            } else {
+                if (curTem - 0.5 <= initialTem) {
+                    curTem = initialTem;
+                    ACServiceMap.get(roomId).setCurTem(curTem);
+                } else {
+                    curTem -= 0.5;
+                    ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             }
         }
     }
-
-
-
 }

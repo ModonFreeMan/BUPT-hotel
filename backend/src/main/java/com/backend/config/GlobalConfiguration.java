@@ -9,11 +9,9 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Configuration
 public class GlobalConfiguration {
@@ -69,8 +67,8 @@ public class GlobalConfiguration {
     }
 
     @Bean(name = "RecoveryQueue")
-    public List<String> initRecoveryQueue() {
-        return Collections.synchronizedList(new ArrayList<>());
+    public CopyOnWriteArrayList<String> initRecoveryQueue() {
+        return new CopyOnWriteArrayList<>();
     }
 
 

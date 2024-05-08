@@ -51,5 +51,4 @@ public class ACServiceObject {
     *入住天数
      */
     private int days;
-
 }

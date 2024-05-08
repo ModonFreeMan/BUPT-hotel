@@ -18,4 +18,6 @@ public interface RoomsService {
     void leaveServiceQueue(String roomId, int leaveStatus);
 
     void enterWaitQueue(String roomId);
+
+    String timeTrans(String oldTime, int offset);
 }

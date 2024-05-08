@@ -62,7 +62,7 @@ public class GlobalConfiguration {
             }
         }
         Statistics theStatistics = new Statistics();
-        theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         theStatistics.setRoomId("-1");
         StatisticsMap.put("-1", theStatistics);
         return StatisticsMap;

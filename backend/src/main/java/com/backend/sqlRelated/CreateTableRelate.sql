@@ -35,7 +35,7 @@ create table rooms
 
 create table statistics
 (
-    date            datetime null,
+    date            date     null,
     detailedBillSum int      null,
     dispatchSum     int      null,
     requestLength   int      null,

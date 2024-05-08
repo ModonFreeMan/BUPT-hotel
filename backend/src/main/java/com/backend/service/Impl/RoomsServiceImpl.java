@@ -1,6 +1,9 @@
 package com.backend.service.Impl;
 
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
 import com.backend.mapper.DetailedBillMapper;
+import com.backend.mapper.StatisticsMapper;
 import com.backend.pojo.*;
 import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
@@ -32,6 +35,9 @@ public class RoomsServiceImpl implements RoomsService {
 
     @Resource
     DetailedBillMapper detailedBillMapper;
+
+    @Resource
+    StatisticsMapper statisticsMapper;
 
     @Autowired
     @Qualifier("RecoveryQueue")
@@ -106,7 +112,13 @@ public class RoomsServiceImpl implements RoomsService {
                     if (waiting_queue1.contains(request.getRoomId()) || waiting_queue2.contains(request.getRoomId()) || waiting_queue3.contains(request.getRoomId())) {// 如果在等待队列需要加等待时间
                         // 增加阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
                         int waiting_length = (int) Duration.between(
-                                LocalDateTime.now(),
+                                LocalDateTime.parse(
+                                        timeTrans(
+                                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                                ACServiceMap.get(
+                                                        request.getRoomId()
+                                                ).getDays()
+                                        ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                 LocalDateTime.parse(
                                         room_message.getWaiting_queue_timestamp(),
                                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -116,6 +128,20 @@ public class RoomsServiceImpl implements RoomsService {
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
                     }
                     room_message.setCurrentFee(0d);
+                }
+                ACServiceMap.get(request.getRoomId()).setDays(ACServiceMap.get(request.getRoomId()).getDays()+1);
+                for (Statistics statistics: statisticsMap.values()) {
+                    statisticsMapper.add(statistics);// 每个数据都写入数据库中
+                    // 第二天数据的初始化
+                    // 更新开始记录的日期，因为是一天的，所以不记录时分秒
+                    statistics.setDate(DateUtil.formatDate(DateUtil.offset(DateUtil.date(), DateField.DAY_OF_MONTH, ACServiceMap.get(request.getRoomId()).getDays())));
+                    statistics.setDetailedBillSum(0);
+                    statistics.setDispatchSum(0);
+                    statistics.setRequestLength(0);
+                    statistics.setSpeedChangeSum(0);
+                    statistics.setSwitchSum(0);
+                    statistics.setTemChangeSum(0);
+                    statistics.setTotalFee(0);
                 }
                 return;// 从开机到关机，除了服务队列中的服务自己判断完后这里就处理这点就够了
             }
@@ -164,11 +190,17 @@ public class RoomsServiceImpl implements RoomsService {
             }
             // 修改加入服务队列的时间戳，修改进入服务队列时的温度
             ACServiceObject room_message = ACServiceMap.get(roomId);
-            room_message.setService_queue_timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            room_message.setService_queue_timestamp(timeTrans(
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),ACServiceMap.get(roomId).getDays()
+            ));
             room_message.setBeforeServiceTem(room_message.getCurTem());
             // 增加今天阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
             int request_length = (int) Duration.between(
-                    LocalDateTime.now(),
+                    LocalDateTime.parse(
+                            timeTrans(
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                    ACServiceMap.get(roomId).getDays()
+                            ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                     LocalDateTime.parse(
                             room_message.getWaiting_queue_timestamp(),
                             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -192,10 +224,15 @@ public class RoomsServiceImpl implements RoomsService {
         // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
         double nowFee = (ACServiceMap.get(roomId).getCurTem()-ACServiceMap.get(roomId).getBeforeServiceTem())*centralACStatus.getRate();
         // 通知信息计算处理详单
-        Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),LocalDateTime.now());
+        Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                LocalDateTime.parse(
+                timeTrans(
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                        ACServiceMap.get(roomId).getDays()
+                ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         detailedBillMapper.insertBill(receptionService.getServiceId(roomId),
                 ACServiceMap.get(roomId).getCurTem(),
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),ACServiceMap.get(roomId).getDays()),
                 nowFee,centralACStatus.getRate(),roomId,
                 ACServiceMap.get(roomId).getSpeedLevel(),ACServiceMap.get(roomId).getBeforeServiceTem(),
                 ACServiceMap.get(roomId).getService_queue_timestamp(),
@@ -233,7 +270,7 @@ public class RoomsServiceImpl implements RoomsService {
     public void enterWaitQueue(String roomId) {
         recoveryQueue.remove(roomId);
         // 更新加入等待队列的时间戳，是因为后面详单需要该信息
-        ACServiceMap.get(roomId).setWaiting_queue_timestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),ACServiceMap.get(roomId).getDays()));
         // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
         waiting_queue1.remove(roomId);
         waiting_queue2.remove(roomId);
@@ -252,6 +289,14 @@ public class RoomsServiceImpl implements RoomsService {
         }
         // 有新加入等待队列的对象，看看服务队列是否需要补充
         enterServiceQueue();
+    }
+
+    @Override
+    public String timeTrans(String oldTime, int offset) {
+        return DateUtil.format(DateUtil.offset(
+                        DateUtil.parse(oldTime),
+                        DateField.DAY_OF_MONTH, offset),
+                "yyyy-MM-dd HH:mm:ss");
     }
 
     @Scheduled(fixedRate = 10000) // 每6s检查一次
@@ -277,7 +322,12 @@ public class RoomsServiceImpl implements RoomsService {
                     else
                         ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
                     // 如果时间片到达
-                    if ((double) Duration.between(LocalDateTime.now(), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
+                    if ((double) Duration.between(
+                            LocalDateTime.parse(
+                            timeTrans(
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                    ACServiceMap.get(roomId).getDays()
+                            ),DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
                             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 2d) {// 暂且时间片为两分钟
                         leaveServiceQueue(roomId, 3);
                     }

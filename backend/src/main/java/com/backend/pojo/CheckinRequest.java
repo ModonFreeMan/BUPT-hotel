@@ -1,6 +1,5 @@
 package com.backend.pojo;
 
-import com.backend.anno.CustomerId;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
@@ -18,7 +17,6 @@ public class CheckinRequest {
     /**
      * 身份证号
      */
-    @CustomerId
     private String customerId;
     /**
      * 名字

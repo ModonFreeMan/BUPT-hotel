@@ -5,3 +5,21 @@ spring:
     password: mufvycquzgek2qEbba
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+rooms:
+  1:
+    initialTem: 32.0
+    feeEveryDay: 100
+  2:
+    initialTem: 28.0
+    feeEveryDay: 125
+  3:
+    initialTem: 30.0
+    feeEveryDay: 150
+  4:
+    initialTem: 29.0
+    feeEveryDay: 200
+  5:
+    initialTem: 35.0
+    feeEveryDay: 100
+
+

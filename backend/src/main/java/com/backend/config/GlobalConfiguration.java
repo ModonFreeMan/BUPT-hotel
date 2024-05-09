@@ -45,15 +45,13 @@ public class GlobalConfiguration {
     public ConcurrentHashMap<String, Statistics> initStatisticsMap() {
         // 在这里初始化阶段报表hashmap对象
         ConcurrentHashMap<String, Statistics> StatisticsMap = new ConcurrentHashMap<>();
-        for (int i = 100; i < 400; i += 100) {
-            for (int j = 1; j < 11; j++) {
-                // 初始化时只用设置房间号和日期
-                String roomId = String.valueOf(i + j);
-                Statistics theStatistics = new Statistics();
-                theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                theStatistics.setRoomId(roomId);
-                StatisticsMap.put(roomId, theStatistics);
-            }
+        for (int i = 1; i < 6; i += 1) {// 只有一到五几个房间
+            // 初始化时只用设置房间号和日期
+            String roomId = String.valueOf(i);
+            Statistics theStatistics = new Statistics();
+            theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            theStatistics.setRoomId(roomId);
+            StatisticsMap.put(roomId, theStatistics);
         }
         Statistics theStatistics = new Statistics();
         theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));

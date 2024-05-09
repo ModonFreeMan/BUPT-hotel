@@ -158,7 +158,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         int days = inTime.getDayOfMonth()-nowTime.getDayOfMonth();
         totalBill.setDays(days);
         totalBill.setRoomType(room.getRoomType());
-        //todo:根据入住天数和房间每日费用计算入住费用
+        //todo:根据入住天数和房间每日费用计算入住费用。房间每日费用可以从全局中获取
         double roomFee = 0;
         totalBill.setRoomFee(roomFee);
 
@@ -207,7 +207,7 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public String getServiceId(String roomId) {
-        Integer id = Integer.getInteger(roomId);
+        int id = Integer.parseInt(roomId);
         if(id <= 0 || id > 20){
             //暂时设定房间数量为20
             System.out.println("房间号错误");

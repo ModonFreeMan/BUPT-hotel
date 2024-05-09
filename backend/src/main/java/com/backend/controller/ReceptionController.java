@@ -90,7 +90,7 @@ public class ReceptionController {
      * @return 凭据
      */
     @PutMapping("/proof")
-    public Result getProof(@RequestParam(value="roomId",required=true)String roomId,@RequestParam(value="roomId",required=true)double paid){
+    public Result getProof(@RequestParam(value="roomId",required=true)String roomId,@RequestParam(value="paid",required=true)double paid){
         String serviceId = receptionService.getServiceId(roomId);
         if(serviceId.equals(""))
             return Result.error("信息不匹配");

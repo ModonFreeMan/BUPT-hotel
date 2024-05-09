@@ -20,7 +20,7 @@ public interface RoomMapper {
     Room getRoom(String roomId);
 
     @Update("update Rooms " +
-            "set customerId=#{customerId},customerGender=#{customerGender},checkinStatus = #{checkinStatus} " +
+            "set checkinDate = #{checkinDate},customerId=#{customerId},customerGender=#{customerGender},checkinStatus = #{checkinStatus} " +
             "where roomId = #{roomId}" )
     void updateRoom(Room room);
     //应该不需要checkinDate = #{checkinDate}，修改记录时数据库会自己修改该时间戳

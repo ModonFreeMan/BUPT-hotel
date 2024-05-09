@@ -2,6 +2,7 @@ package com.backend.controller;
 
 
 import com.backend.pojo.CheckinRequest;
+import com.backend.pojo.CheckoutRequest;
 import com.backend.pojo.Result;
 import com.backend.pojo.UniqueServiceObject;
 import com.backend.service.ReceptionService;
@@ -55,15 +56,17 @@ public class ReceptionController {
      * @return 返回房间信息
      */
     @PutMapping("/checkout")
-    public Result customerCheckOut(@RequestParam("roomId") String roomId,@RequestParam("customerId") String customerId) {
-        String serviceId = receptionService.isCustomerExist(roomId,customerId);
+    public Result customerCheckOut(@RequestBody CheckoutRequest checkoutRequest) {
+        String serviceId = receptionService.isCustomerExist(checkoutRequest.getRoomId(),checkoutRequest.getCustomerId());
         if(serviceId.equals("")){
             //该房间不存在或不服务该用户，打印错误信息
             return Result.error("信息不匹配");
         }
-        receptionService.checkOut(roomId,serviceId);
+        receptionService.checkOut(checkoutRequest.getRoomId(),serviceId);
         return Result.success();
     }
+
+
 
     /**
      * 获取详单列表

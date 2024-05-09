@@ -9,10 +9,11 @@ import com.backend.service.ReceptionService;
 import com.backend.utils.SnowFlakeUtil;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,6 +53,8 @@ public class ReceptionServiceImpl implements ReceptionService {
         room.setCustomerGender(checkinRequest.getCustomerGender());
         room.setCustomerId(checkinRequest.getCustomerId());
         room.setCheckinStatus(true);
+        LocalDate nowTime = LocalDate.now();
+        room.setCheckinDate(String.valueOf(nowTime));
         try {
             roomMapper.updateRoom(room);
             //生成UniqueServiceObject，存到内存里
@@ -61,9 +64,13 @@ public class ReceptionServiceImpl implements ReceptionService {
             uniqueService.setCustomerId(checkinRequest.getCustomerId());
             uniqueService.setRoomId(checkinRequest.getRoomId());
             uniqueServiceObjects.add(uniqueService);
-            Customer customer = new Customer(checkinRequest.getContactNumber(),checkinRequest.getCustomerGender(),checkinRequest.getCustomerId(),checkinRequest.getCustomerName());
-            customerMapper.insertCustomer(customer);
-
+            String customerName = customerMapper.selectNameById(checkinRequest.getCustomerId());
+            if(customerName != null && !customerName.equals(""))
+                System.out.println("用户"+customerName+"已经注册过");
+            else {
+                Customer customer = new Customer(checkinRequest.getContactNumber(),checkinRequest.getCustomerGender(),checkinRequest.getCustomerId(),checkinRequest.getCustomerName());
+                customerMapper.insertCustomer(customer);
+            }
             //每次入住时创建新的空调服务对象
             ACServiceObject acServiceObject = new ACServiceObject();
             acServiceObject.setSwitchStatus(false);//空调初始情况为关机
@@ -141,14 +148,14 @@ public class ReceptionServiceImpl implements ReceptionService {
         Room room = roomMapper.getRoom(roomId);
         //计算入住时间。  todo：可能要靠开关机次数进行修改了！！
         String inDate = room.getCheckinDate();
-        // 将字符串转换为LocalDateTime对象
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDateTime inTime = LocalDateTime.parse(inDate, formatter);
-        // 获取当前日期和时间
-        LocalDateTime nowTime = LocalDateTime.now();
+        // 将字符串转换为LocalDate对象
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate inTime = LocalDate.parse(inDate, formatter);
+        LocalDate nowTime = LocalDate.now();
         // 计算两个时间之间的日期数
-        Duration duration = Duration.between(inTime, nowTime);
-        int days = (int)duration.toDays();
+        //Duration duration = Duration.between(inTime, nowTime);
+        //int days = (int)duration.toDays();
+        int days = inTime.getDayOfMonth()-nowTime.getDayOfMonth();
         totalBill.setDays(days);
         totalBill.setRoomType(room.getRoomType());
         //todo:根据入住天数和房间每日费用计算入住费用
@@ -191,6 +198,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         proof.setCustomerName(totalBill.getCustomerName());
         //删去对应的UniqueObject
         deleteUniqueService(serviceId);
+        roomMapper.setRoomFree(totalBill.getRoomId());
         return proof;
     }
 

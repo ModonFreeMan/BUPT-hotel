@@ -7,13 +7,13 @@ import lombok.Data;
 @AllArgsConstructor
 public class DetailedBill {
     /**
+     * 唯一服务标识
+     */
+    private String serviceId;
+    /**
      * 结束温度
      */
     private double endTem;
-    /**
-     * 结束时间
-     */
-    private String endTime;
     /**
      * 总费用
      */
@@ -34,6 +34,10 @@ public class DetailedBill {
      * 起始温度
      */
     private double startTem;
+    /**
+     * 结束时间
+     */
+    private String endTime;
     /**
      * 开始时间,开始服务的时间
      */

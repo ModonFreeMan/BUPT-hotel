@@ -77,6 +77,7 @@ public class ReceptionController {
     public Result getDetailedBill(@PathVariable String roomId){
         //根据房间号获取服务号
         String serviceId = receptionService.getServiceId(roomId);
+        System.out.println(serviceId);
         if(serviceId.equals(""))
             return Result.error("信息不匹配");
         //根据服务号获取本次服务的所有详单

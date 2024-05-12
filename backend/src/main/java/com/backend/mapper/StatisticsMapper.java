@@ -12,6 +12,6 @@ public interface StatisticsMapper {
     @Insert("insert into statistics values(#{date},#{detailedBillSum},#{dispatchSum},#{requestLength},#{roomId},#{speedChangeSum},#{switchSum},#{temChangeSum},#{totalFee})")
     void add(Statistics statistics);
 
-    @Select("select * from statistics")
-    List<Statistics> getStatistics();
+    @Select("select * from statistics where DATE between #{startDate} and #{endDate}")
+    List<Statistics> getStatistics(String startDate,String endDate);
 }

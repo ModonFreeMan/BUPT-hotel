@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class ManagerServiceImpl implements ManagerService {
@@ -26,14 +28,29 @@ public class ManagerServiceImpl implements ManagerService {
 
     @Override
     public List<Statistics> getStatistics(String startDate, String endDate) {
-        List<Statistics> returnMap = statisticsMapper.getStatistics(startDate, endDate);
+        List<Statistics> returnList = statisticsMapper.getStatistics(startDate, endDate);
         // 先前所有的数据加上处于今天的房间的数据
         for (Statistics statistics:statisticsMap.values()) {
             if(dateComparison(startDate,endDate,statistics.getDate())){
-                returnMap.add(statistics);
+                returnList.add(statistics);
             }
         }
-        return returnMap;
+        // 统计数据
+        returnList = new ArrayList<>( returnList.stream().collect(Collectors.groupingBy(Statistics::getRoomId,
+                Collectors.reducing(new Statistics(),
+                                (left, right) -> {
+                                    right.setDetailedBillSum(left.getDetailedBillSum()+ right.getDetailedBillSum());
+                                    right.setDispatchSum(left.getDispatchSum()+right.getDispatchSum());
+                                    right.setRequestLength(left.getRequestLength()+right.getRequestLength());
+                                    right.setSpeedChangeSum(left.getSpeedChangeSum()+right.getSpeedChangeSum());
+                                    right.setSwitchSum(left.getSwitchSum() + right.getSwitchSum());
+                                    right.setTemChangeSum(left.getTemChangeSum() + right.getTemChangeSum());
+                                    right.setTotalFee(left.getTotalFee()+right.getTotalFee());
+                                    return right;
+                                }
+                        )
+                )).values());
+        return returnList;
     }
     public boolean dateComparison(String startDate, String endDate,String checkDate){
         try {

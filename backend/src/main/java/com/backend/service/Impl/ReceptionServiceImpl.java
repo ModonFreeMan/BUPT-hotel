@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalUnit;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +39,9 @@ public class ReceptionServiceImpl implements ReceptionService {
 
     @Resource(name = "ACServiceMap")
     ConcurrentHashMap<String, ACServiceObject> acServiceObjects; //房间空调状态
+
+    @Resource(name = "FiveRoomDetailsMap")
+    HashMap<String, FiveRoomDetail> fiveRoomDetailHashMap; //房间配置信息
 
     //存储当前不空闲的房间对应的顾客和服务Id
     static List<UniqueServiceObject> uniqueServiceObjects = new LinkedList<>();
@@ -74,7 +78,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             //每次入住时创建新的空调服务对象
             ACServiceObject acServiceObject = new ACServiceObject();
             acServiceObject.setSwitchStatus(false);//空调初始情况为关机
-            acServiceObject.setCurTem(0); //todo:从房间初始温度获得
+            acServiceObject.setCurTem(fiveRoomDetailHashMap.get(checkinRequest.getRoomId()).getInitialTem());
             acServiceObject.setSpeedLevel(1); //空调初始风速为中速
             acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
             acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
@@ -158,8 +162,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         int days = inTime.getDayOfMonth()-nowTime.getDayOfMonth();
         totalBill.setDays(days);
         totalBill.setRoomType(room.getRoomType());
-        //todo:根据入住天数和房间每日费用计算入住费用。房间每日费用可以从全局中获取
-        double roomFee = 0;
+        double roomFee = days*fiveRoomDetailHashMap.get(roomId).getFeeEveryDay();
         totalBill.setRoomFee(roomFee);
 
 

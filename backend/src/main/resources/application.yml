@@ -4,7 +4,6 @@ spring:
     username: root
     password: mufvycquzgek2qEbba
     driver-class-name: com.mysql.cj.jdbc.Driver
-
 rooms:
   1:
     initialTem: 32.0
@@ -21,5 +20,6 @@ rooms:
   5:
     initialTem: 35.0
     feeEveryDay: 100
-
+server:
+  address: 10.129.194.103
 

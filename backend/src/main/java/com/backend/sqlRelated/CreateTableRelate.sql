@@ -18,6 +18,7 @@ create table detailedbills
     speedLevel int          null,
     startTem   double       null,
     startTime  datetime     null,
+    endTime    datetime     null,
     requestTime datetime    null,
     serviceLength varchar(30)  null
 );

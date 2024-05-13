@@ -4,11 +4,10 @@ package com.backend.controller;
 import com.backend.pojo.CheckinRequest;
 import com.backend.pojo.CheckoutRequest;
 import com.backend.pojo.Result;
-import com.backend.pojo.UniqueServiceObject;
+import com.backend.pojo.TotalBill;
 import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,12 +57,15 @@ public class ReceptionController {
     @PutMapping("/checkout")
     public Result customerCheckOut(@RequestBody CheckoutRequest checkoutRequest) {
         String serviceId = receptionService.isCustomerExist(checkoutRequest.getRoomId(),checkoutRequest.getCustomerId());
-        if(serviceId.equals("")){
+        if(serviceId.isEmpty()){
             //该房间不存在或不服务该用户，打印错误信息
             return Result.error("信息不匹配");
         }
-        receptionService.checkOut(checkoutRequest.getRoomId(),serviceId);
-        return Result.success();
+        TotalBill totalBill = receptionService.checkOut(checkoutRequest.getRoomId(),serviceId);
+        if(totalBill == null){
+            return Result.error("信息不匹配");
+        }
+        return Result.success(totalBill);
     }
 
 
@@ -77,7 +79,8 @@ public class ReceptionController {
     public Result getDetailedBill(@PathVariable String roomId){
         //根据房间号获取服务号
         String serviceId = receptionService.getServiceId(roomId);
-        if(serviceId.equals(""))
+        System.out.println(serviceId);
+        if(serviceId.isEmpty())
             return Result.error("信息不匹配");
         //根据服务号获取本次服务的所有详单
         return Result.success(receptionService.getDetailedBills(serviceId));
@@ -92,7 +95,7 @@ public class ReceptionController {
     @PutMapping("/proof")
     public Result getProof(@RequestParam(value="roomId",required=true)String roomId,@RequestParam(value="paid",required=true)double paid){
         String serviceId = receptionService.getServiceId(roomId);
-        if(serviceId.equals(""))
+        if(serviceId.isEmpty())
             return Result.error("信息不匹配");
         return Result.success(receptionService.getProof(serviceId,paid));
     }

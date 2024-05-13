@@ -1,5 +1,7 @@
 package com.backend.service.Impl;
 
+import cn.hutool.poi.excel.ExcelUtil;
+import cn.hutool.poi.excel.ExcelWriter;
 import com.backend.mapper.CustomerMapper;
 import com.backend.mapper.DetailedBillMapper;
 import com.backend.mapper.RoomMapper;
@@ -9,11 +11,10 @@ import com.backend.service.ReceptionService;
 import com.backend.utils.SnowFlakeUtil;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
-import java.time.Duration;
+
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalUnit;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,6 +82,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             acServiceObject.setCurTem(fiveRoomDetailHashMap.get(checkinRequest.getRoomId()).getInitialTem());
             acServiceObject.setSpeedLevel(1); //空调初始风速为中速
             acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
+            acServiceObject.setDays(1);
             acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
 
         } catch (Exception e) {
@@ -138,11 +140,11 @@ public class ReceptionServiceImpl implements ReceptionService {
 
 
     @Override
-    public void checkOut(String roomId,String serviceId) {
+    public TotalBill checkOut(String roomId,String serviceId) {
         UniqueServiceObject uniqueServiceObject = getUniqueService(roomId);
         if(uniqueServiceObject == null){
             System.out.println("退房时出错！不服务该用户");
-            return;
+            return null;
         }
         TotalBill totalBill = new TotalBill();
         totalBill.setServiceId(serviceId);
@@ -150,7 +152,8 @@ public class ReceptionServiceImpl implements ReceptionService {
         totalBill.setCustomerId(uniqueServiceObject.getCustomerId());
         totalBill.setCustomerName(customerMapper.selectNameById(uniqueServiceObject.getCustomerId()));
         Room room = roomMapper.getRoom(roomId);
-        //计算入住时间。  todo：可能要靠开关机次数进行修改了！！
+        /*
+        //计算入住时间。
         String inDate = room.getCheckinDate();
         // 将字符串转换为LocalDate对象
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -159,21 +162,24 @@ public class ReceptionServiceImpl implements ReceptionService {
         // 计算两个时间之间的日期数
         //Duration duration = Duration.between(inTime, nowTime);
         //int days = (int)duration.toDays();
-        int days = inTime.getDayOfMonth()-nowTime.getDayOfMonth();
+        int days = inTime.getDayOfMonth()-nowTime.getDayOfMonth();*/
+        int days = acServiceObjects.get(roomId).getDays(); //改为从空调服务对象中获取天数
         totalBill.setDays(days);
         totalBill.setRoomType(room.getRoomType());
         double roomFee = days*fiveRoomDetailHashMap.get(roomId).getFeeEveryDay();
         totalBill.setRoomFee(roomFee);
 
-
+        /*
         List<DetailedBill> detailedBills = getDetailedBills(serviceId);
         double acFee = 0;
         for (DetailedBill d: detailedBills) {
             acFee += d.getFee();
-        }
+        }*/
+        double acFee = acServiceObjects.get(roomId).getTotalFee();//改为从空调服务对象中获取总费用
         totalBill.setAcFee(acFee);
         totalBill.setTotalFee(roomFee+acFee);
         totalBillMapper.insertBill(totalBill);
+        return totalBill;
     }
 
 
@@ -182,7 +188,31 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public List<DetailedBill> getDetailedBills(String serviceId) {
-        return detailedBillMapper.getDetailedBills(serviceId);
+        List<DetailedBill> detailedBills = detailedBillMapper.getDetailedBills(serviceId);
+        ExcelWriter excelWriter = ExcelUtil.getWriter(true);
+        excelWriter.setOnlyAlias(true);
+        excelWriter.addHeaderAlias("serviceId","服务标识");
+        excelWriter.addHeaderAlias("endTem","结束温度");
+        excelWriter.addHeaderAlias("endTime","结束时间");
+        excelWriter.addHeaderAlias("fee","总费用");
+        excelWriter.addHeaderAlias("rate","费率");
+        excelWriter.addHeaderAlias("roomId","房间号");
+        excelWriter.addHeaderAlias("speedLevel","风速");
+        excelWriter.addHeaderAlias("startTem","起始温度");
+        excelWriter.addHeaderAlias("startTime","开始时间");
+        excelWriter.addHeaderAlias("requestTime","请求时间");
+        excelWriter.addHeaderAlias("serviceLength","服务时长");
+        excelWriter.write(detailedBills,true);
+        try {
+            OutputStream outputStream = new FileOutputStream(serviceId+"详单表格.xlsx");
+            excelWriter.flush(outputStream);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("表格输出失败");;
+        }
+        excelWriter.close();
+        return detailedBills;
     }
 
     /**

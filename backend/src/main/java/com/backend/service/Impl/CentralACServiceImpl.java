@@ -64,7 +64,7 @@ public class CentralACServiceImpl implements CentralACService {
                 airConditionerStatus.setRunningStatus(false);
                 airConditionerStatus.setCurrentFee(0d);
                 airConditionerStatus.setWorkMode(centralACStatus.isWorkMode());
-                airConditionerStatus.setSpeedLevel(1);
+                airConditionerStatus.setSpeedLevel(2);
                 if(centralACStatus.isWorkMode()){
                     airConditionerStatus.setTargetTem(25d);
                 }

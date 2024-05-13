@@ -277,15 +277,15 @@ public class RoomsServiceImpl implements RoomsService {
         waiting_queue1.remove(roomId);
         waiting_queue2.remove(roomId);
         waiting_queue3.remove(roomId);
-        // 假设风速对三个值分别对应0，1，2
+        // 假设风速对三个值分别对应1,2,3
         switch (ACServiceMap.get(roomId).getSpeedLevel()) {
-            case 0:
+            case 1:
                 waiting_queue1.add(roomId);
                 break;
-            case 1:
+            case 2:
                 waiting_queue2.add(roomId);
                 break;
-            case 2:
+            case 3:
                 waiting_queue3.add(roomId);
                 break;
         }
@@ -306,7 +306,7 @@ public class RoomsServiceImpl implements RoomsService {
         // 温度更新
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()] / 10;
+            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 10;
             // 先判断是否关机的，直接移出
             if (!ACServiceMap.get(roomId).isSwitchStatus()) {
                 service_queue.remove(roomId);

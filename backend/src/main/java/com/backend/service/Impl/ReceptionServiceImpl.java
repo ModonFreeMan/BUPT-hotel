@@ -80,7 +80,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             ACServiceObject acServiceObject = new ACServiceObject();
             acServiceObject.setSwitchStatus(false);//空调初始情况为关机
             acServiceObject.setCurTem(fiveRoomDetailHashMap.get(checkinRequest.getRoomId()).getInitialTem());
-            acServiceObject.setSpeedLevel(1); //空调初始风速为中速
+            acServiceObject.setSpeedLevel(2); //空调初始风速为中速
             acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
             acServiceObject.setDays(1);
             acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
@@ -203,7 +203,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             outputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("表格输出失败");;
+            System.out.println("表格输出失败");
         }
         excelWriter.close();
         return detailedBills;

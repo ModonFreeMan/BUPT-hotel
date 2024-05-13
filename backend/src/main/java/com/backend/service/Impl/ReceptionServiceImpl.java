@@ -70,7 +70,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             uniqueService.setRoomId(checkinRequest.getRoomId());
             uniqueServiceObjects.add(uniqueService);
             String customerName = customerMapper.selectNameById(checkinRequest.getCustomerId());
-            if(customerName != null && !customerName.equals(""))
+            if(customerName != null && !customerName.isEmpty())
                 System.out.println("用户"+customerName+"已经注册过");
             else {
                 Customer customer = new Customer(checkinRequest.getContactNumber(),checkinRequest.getCustomerGender(),checkinRequest.getCustomerId(),checkinRequest.getCustomerName());
@@ -84,6 +84,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
             acServiceObject.setDays(1);
             acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
+            System.out.println("AcServiceObject对象被加入");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -107,12 +108,6 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public boolean isRoomEmpty(String roomId) {
-        int id = Integer.parseInt(roomId);
-        if(id <= 0 || id > 20){
-            //暂时设定房间数量为20
-            System.out.println("房间号错误");
-            return false;
-        }
         Room room = roomMapper.getRoom(roomId);
         return room.isCheckinStatus();
     }
@@ -168,7 +163,6 @@ public class ReceptionServiceImpl implements ReceptionService {
         totalBill.setRoomType(room.getRoomType());
         double roomFee = days*fiveRoomDetailHashMap.get(roomId).getFeeEveryDay();
         totalBill.setRoomFee(roomFee);
-
         /*
         List<DetailedBill> detailedBills = getDetailedBills(serviceId);
         double acFee = 0;

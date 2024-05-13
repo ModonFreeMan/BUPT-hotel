@@ -16,7 +16,7 @@ public class ServicingSchedulingConfig implements SchedulingConfigurer {
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(10);
-        // 有一个定时任务一直被statistics的日期监察所占用，多余的是避免其它地方创建定时任务直接把它搞成串形
+        // 有一个定时任务一直被statistics的日期监察所占用，多余的是避免其它地方创建定时任务直接把它搞成串行
         scheduler.initialize();
         return scheduler;
     }

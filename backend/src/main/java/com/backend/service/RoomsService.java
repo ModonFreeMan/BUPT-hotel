@@ -20,4 +20,6 @@ public interface RoomsService {
     void enterWaitQueue(String roomId);
 
     String timeTrans(String oldTime, int offset);
+
+    boolean isRunning(String roomId);
 }

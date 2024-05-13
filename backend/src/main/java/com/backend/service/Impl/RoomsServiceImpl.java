@@ -361,4 +361,9 @@ public class RoomsServiceImpl implements RoomsService {
             }
         }
     }
+
+    public boolean isRunning(String roomId){
+        return this.service_queue.contains(roomId);
+    }
+
 }

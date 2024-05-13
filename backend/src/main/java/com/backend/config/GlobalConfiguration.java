@@ -4,9 +4,11 @@ import com.backend.pojo.ACServiceObject;
 import com.backend.pojo.CentralACStatus;
 import com.backend.pojo.FiveRoomDetail;
 import com.backend.pojo.Statistics;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -14,12 +16,12 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-
 @Configuration
+@PropertySource("classpath:application.yml")
 public class GlobalConfiguration {
+
+    @Value("${roomSum.number}")
+    private int roomSum;
 
     @Bean(name = "FiveRoomDetailsMap")
     @ConfigurationProperties(prefix = "rooms")
@@ -49,9 +51,9 @@ public class GlobalConfiguration {
     public ConcurrentHashMap<String, Statistics> initStatisticsMap() {
         // 在这里初始化阶段报表hashmap对象
         ConcurrentHashMap<String, Statistics> StatisticsMap = new ConcurrentHashMap<>();
-        for (int i = 1; i < 6; i += 1) {// 只有一到五几个房间
+        for (int i = 1; i <= roomSum; i += 1) {// 只有一到五几个房间
             // 初始化时只用设置房间号和日期
-            String roomId = String.valueOf(i);
+            String roomId = "10"+ i;
             Statistics theStatistics = new Statistics();
             theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             theStatistics.setRoomId(roomId);
@@ -68,22 +70,6 @@ public class GlobalConfiguration {
     public CopyOnWriteArrayList<String> initRecoveryQueue() {
         return new CopyOnWriteArrayList<>();
     }
-
-    // 当前跨域请求最大有效时长。这里默认1天
-    private static final long MAX_AGE = 24 * 60 * 60;
-
-    @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin("*"); // 1 设置访问源地址
-        corsConfiguration.addAllowedHeader("*"); // 2 设置访问源请求头
-        corsConfiguration.addAllowedMethod("*"); // 3 设置访问源请求方法
-        corsConfiguration.setMaxAge(MAX_AGE);
-        source.registerCorsConfiguration("/**", corsConfiguration); // 4 对接口配置跨域设置
-        return new CorsFilter(source);
-    }
-
 
 
 }

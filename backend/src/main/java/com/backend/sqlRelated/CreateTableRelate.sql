@@ -9,17 +9,16 @@ create table customers
 
 create table detailedbills
 (
-    serviceId  varchar(255) not null
-        primary key,
-    endTem     double       null,
-    fee        double       null,
-    rate       double       null,
-    roomId     varchar(30)  null,
-    speedLevel int          null,
-    startTem   double       null,
-    startTime  datetime     null,
-    endTime    datetime     null,
-    requestTime datetime    null,
+    serviceId     varchar(255) not null,
+    endTem        double       null,
+    endTime       datetime     null,
+    fee           double       null,
+    rate          double       null,
+    roomId        varchar(30)  null,
+    speedLevel    int          null,
+    startTem      double       null,
+    startTime     datetime     null,
+    requestTime   datetime     null,
     serviceLength varchar(30)  null
 );
 
@@ -36,15 +35,15 @@ create table rooms
 
 create table statistics
 (
-    date            date     null,
-    detailedBillSum int      null,
-    dispatchSum     int      null,
-    requestLength   int      null,
-    roomId          int      null,
-    speedChangeSum  int      null,
-    switchSum       int      null,
-    temChangeSum    int      null,
-    totalFee        int      null
+    date            date null,
+    detailedBillSum int  null,
+    dispatchSum     int  null,
+    requestLength   int  null,
+    roomId          int  null,
+    speedChangeSum  int  null,
+    switchSum       int  null,
+    temChangeSum    int  null,
+    totalFee        int  null
 );
 
 create table totalbills

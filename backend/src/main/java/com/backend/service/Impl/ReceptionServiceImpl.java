@@ -82,6 +82,7 @@ public class ReceptionServiceImpl implements ReceptionService {
             acServiceObject.setCurTem(fiveRoomDetailHashMap.get(checkinRequest.getRoomId()).getInitialTem());
             acServiceObject.setSpeedLevel(1); //空调初始风速为中速
             acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
+            acServiceObject.setDays(1);
             acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
 
         } catch (Exception e) {
@@ -139,11 +140,11 @@ public class ReceptionServiceImpl implements ReceptionService {
 
 
     @Override
-    public void checkOut(String roomId,String serviceId) {
+    public TotalBill checkOut(String roomId,String serviceId) {
         UniqueServiceObject uniqueServiceObject = getUniqueService(roomId);
         if(uniqueServiceObject == null){
             System.out.println("退房时出错！不服务该用户");
-            return;
+            return null;
         }
         TotalBill totalBill = new TotalBill();
         totalBill.setServiceId(serviceId);
@@ -178,6 +179,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         totalBill.setAcFee(acFee);
         totalBill.setTotalFee(roomFee+acFee);
         totalBillMapper.insertBill(totalBill);
+        return totalBill;
     }
 
 

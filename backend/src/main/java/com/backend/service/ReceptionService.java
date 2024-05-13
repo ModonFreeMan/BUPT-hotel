@@ -16,7 +16,7 @@ public interface ReceptionService {
 
     String isCustomerExist(String roomId,String customerId);
 
-    void checkOut(String roomId,String serviceId);
+    TotalBill checkOut(String roomId,String serviceId);
 
 
     List<DetailedBill> getDetailedBills(String serviceId);

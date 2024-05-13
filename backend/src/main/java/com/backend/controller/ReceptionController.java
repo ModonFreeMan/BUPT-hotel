@@ -1,10 +1,7 @@
 package com.backend.controller;
 
 
-import com.backend.pojo.CheckinRequest;
-import com.backend.pojo.CheckoutRequest;
-import com.backend.pojo.Result;
-import com.backend.pojo.UniqueServiceObject;
+import com.backend.pojo.*;
 import com.backend.service.ReceptionService;
 import com.backend.service.RoomsService;
 import jakarta.annotation.Resource;
@@ -62,8 +59,11 @@ public class ReceptionController {
             //该房间不存在或不服务该用户，打印错误信息
             return Result.error("信息不匹配");
         }
-        receptionService.checkOut(checkoutRequest.getRoomId(),serviceId);
-        return Result.success();
+        TotalBill totalBill = receptionService.checkOut(checkoutRequest.getRoomId(),serviceId);
+        if(totalBill == null){
+            return Result.error("信息不匹配");
+        }
+        return Result.success(totalBill);
     }
 
 

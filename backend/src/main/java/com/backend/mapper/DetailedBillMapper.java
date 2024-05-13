@@ -16,7 +16,7 @@ public interface DetailedBillMapper {
     @Select("select * from detailedbills where serviceId = #{serviceId}")
     List<DetailedBill> getDetailedBills(String serviceId);
 
-    @Insert("insert into detailedbills values(#{serviceId},#{endTem},#{fee},#{rate},#{roomId},#{speedLevel},#{startTem},#{startTime}, #{requestTime},#{serviceLength})")
+    @Insert("insert into detailedbills values(#{serviceId},#{endTem},#{endTime},#{fee},#{rate},#{roomId},#{speedLevel},#{startTem},#{startTime},#{requestTime},#{serviceLength})")
     void insertBill(String serviceId, double endTem, String endTime, double fee, double rate, String roomId, int speedLevel, double startTem, String startTime, String requestTime, String serviceLength);
 
 

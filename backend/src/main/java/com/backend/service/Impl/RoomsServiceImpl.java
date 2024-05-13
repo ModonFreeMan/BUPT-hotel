@@ -224,7 +224,8 @@ public class RoomsServiceImpl implements RoomsService {
         // 首先字面意思，移出服务队列先
         service_queue.remove(roomId);
         // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
-        double nowFee = (ACServiceMap.get(roomId).getCurTem() - ACServiceMap.get(roomId).getBeforeServiceTem()) * centralACStatus.getRate();
+        double nowFee = Math.abs(ACServiceMap.get(roomId).getCurTem() - ACServiceMap.get(roomId).getBeforeServiceTem()) * centralACStatus.getRate();
+        System.out.println("++++++++++++"+nowFee);
         // 通知信息计算处理详单
         Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 LocalDateTime.parse(
@@ -232,14 +233,19 @@ public class RoomsServiceImpl implements RoomsService {
                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                 ACServiceMap.get(roomId).getDays()
                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        detailedBillMapper.insertBill(receptionService.getServiceId(roomId),
+        detailedBillMapper.insertBill(
+                receptionService.getServiceId(roomId),
                 ACServiceMap.get(roomId).getCurTem(),
                 timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()),
-                nowFee, centralACStatus.getRate(), roomId,
-                ACServiceMap.get(roomId).getSpeedLevel(), ACServiceMap.get(roomId).getBeforeServiceTem(),
+                nowFee,
+                centralACStatus.getRate(),
+                roomId,
+                ACServiceMap.get(roomId).getSpeedLevel(),
+                ACServiceMap.get(roomId).getBeforeServiceTem(),
                 ACServiceMap.get(roomId).getService_queue_timestamp(),
                 ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
-                String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+                String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart())
+        );
         // 增加currentFee，和TotalFee
         ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);
         ACServiceMap.get(roomId).setTotalFee(ACServiceMap.get(roomId).getTotalFee() + nowFee);

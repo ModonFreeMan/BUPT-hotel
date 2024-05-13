@@ -9,7 +9,7 @@ public class CentralACStatus {
      */
     private boolean switchStatus;
     /**
-     * 费率数组,低中高速风费率,下标分别是0，1，2，可直接用风速作为下标
+     * 费率数组,低中高速风费率,下标分别是1，2，3可直接用风速作为下标
      */
     private double rate;
     /**

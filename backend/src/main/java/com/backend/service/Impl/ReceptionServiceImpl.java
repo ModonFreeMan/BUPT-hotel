@@ -84,8 +84,6 @@ public class ReceptionServiceImpl implements ReceptionService {
             acServiceObject.setWorkMode(centralACStatus.isWorkMode());// 空调初始工作模式与中央空调一致
             acServiceObject.setDays(1);
             acServiceObjects.put(checkinRequest.getRoomId(),acServiceObject); //存入空调状态map
-            System.out.println("AcServiceObject对象被加入");
-
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

@@ -7,7 +7,8 @@ spring:
 
 roomSum:
   number: 5
-
+mybatis:
+  type-aliases-package: com.example.backend.pojo
 
 rooms:
   101:
@@ -25,5 +26,4 @@ rooms:
   105:
     initialTem: 35.0
     feeEveryDay: 100
-
 

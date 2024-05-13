@@ -16,7 +16,8 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -115,16 +116,16 @@ public class RoomsServiceImpl implements RoomsService {
                         // 增加阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
                         int waiting_length = (int) Duration.between(
                                 LocalDateTime.parse(
+                                        room_message.getWaiting_queue_timestamp(),
+                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                                ),
+                                LocalDateTime.parse(
                                         timeTrans(
                                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                                 ACServiceMap.get(
                                                         request.getRoomId()
                                                 ).getDays()
-                                        ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                LocalDateTime.parse(
-                                        room_message.getWaiting_queue_timestamp(),
-                                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                                )
+                                        ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         ).getSeconds();
                         statisticsMap.get("-1").setRequestLength(statisticsMap.get("-1").getRequestLength() + waiting_length);
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
@@ -225,7 +226,6 @@ public class RoomsServiceImpl implements RoomsService {
         service_queue.remove(roomId);
         // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
         double nowFee = Math.abs(ACServiceMap.get(roomId).getCurTem() - ACServiceMap.get(roomId).getBeforeServiceTem()) * centralACStatus.getRate();
-        System.out.println("++++++++++++"+nowFee);
         // 通知信息计算处理详单
         Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 LocalDateTime.parse(
@@ -307,12 +307,12 @@ public class RoomsServiceImpl implements RoomsService {
                 "yyyy-MM-dd HH:mm:ss");
     }
 
-    @Scheduled(fixedRate = 10000) // 每6s检查一次
+    @Scheduled(fixedRate = 1000) // 每1s检查一次
     public void scheduledTask() {
         // 温度更新
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 10;
+            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60;
             // 先判断是否关机的，直接移出
             if (!ACServiceMap.get(roomId).isSwitchStatus()) {
                 service_queue.remove(roomId);

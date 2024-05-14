@@ -10,7 +10,6 @@ import com.backend.service.RoomsService;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -43,8 +42,8 @@ public class RoomsServiceImpl implements RoomsService {
     @Resource
     StatisticsMapper statisticsMapper;
 
-    @Value("${speedUpRate}")
-    private double speedUpRate;
+
+    private static final double SPEEDUPRATE = 6;
 
     @Autowired
     @Qualifier("RecoveryQueue")
@@ -309,7 +308,7 @@ public class RoomsServiceImpl implements RoomsService {
         // 温度更新
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*speedUpRate;
+            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*SPEEDUPRATE;
             if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
                 leaveServiceQueue(roomId, 1);
             } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
@@ -329,7 +328,7 @@ public class RoomsServiceImpl implements RoomsService {
                                 timeTrans(
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                         ACServiceMap.get(roomId).getDays()
-                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * speedUpRate >= 2d) {// 时间片为两分钟
+                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
                     leaveServiceQueue(roomId, 3);
                 }
             }

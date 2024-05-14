@@ -10,8 +10,6 @@ roomSum:
 mybatis:
   type-aliases-package: com.example.backend.pojo
 
-speedUpRate:
-  number: 6
 
 rooms:
   101:

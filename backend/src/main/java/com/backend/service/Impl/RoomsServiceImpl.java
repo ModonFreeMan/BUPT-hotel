@@ -126,7 +126,7 @@ public class RoomsServiceImpl implements RoomsService {
                                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                                 ACServiceMap.get(
                                                         request.getRoomId()
-                                                ).getDays()
+                                                ).getDays()-1
                                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         ).getSeconds();
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
@@ -140,7 +140,7 @@ public class RoomsServiceImpl implements RoomsService {
                     statisticsMapper.add(statistics);// 每个数据都写入数据库中
                     // 第二天数据的初始化
                     // 更新开始记录的日期，因为是一天的，所以不记录时分秒
-                    statistics.setDate(DateUtil.formatDate(DateUtil.offset(DateUtil.date(), DateField.DAY_OF_MONTH, ACServiceMap.get(request.getRoomId()).getDays())));
+                    statistics.setDate(DateUtil.formatDate(DateUtil.offset(DateUtil.date(), DateField.DAY_OF_MONTH, ACServiceMap.get(request.getRoomId()).getDays()-1)));
                     statistics.setDetailedBillSum(0);
                     statistics.setDispatchSum(0);
                     statistics.setRequestLength(0);
@@ -195,7 +195,7 @@ public class RoomsServiceImpl implements RoomsService {
             // 修改加入服务队列的时间戳，修改进入服务队列时的温度
             ACServiceObject room_message = ACServiceMap.get(roomId);
             room_message.setService_queue_timestamp(timeTrans(
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1
             ));
             room_message.setBeforeServiceTem(room_message.getCurTem());
             // 增加今天阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
@@ -206,7 +206,7 @@ public class RoomsServiceImpl implements RoomsService {
                     ),LocalDateTime.parse(
                             timeTrans(
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                    ACServiceMap.get(roomId).getDays()
+                                    ACServiceMap.get(roomId).getDays()-1
                             ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             ).getSeconds();
             statisticsMap.get(roomId).setRequestLength(statisticsMap.get(roomId).getRequestLength() + request_length);
@@ -229,12 +229,12 @@ public class RoomsServiceImpl implements RoomsService {
                 LocalDateTime.parse(
                         timeTrans(
                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                ACServiceMap.get(roomId).getDays()
+                                ACServiceMap.get(roomId).getDays()-1
                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         detailedBillMapper.insertBill(
                 receptionService.getServiceId(roomId),
                 ACServiceMap.get(roomId).getCurTem(),
-                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()),
+                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1),
                 nowFee,
                 centralACStatus.getRate(),
                 roomId,
@@ -274,7 +274,7 @@ public class RoomsServiceImpl implements RoomsService {
     public void enterWaitQueue(String roomId) {
         recoveryQueue.remove(roomId);
         // 更新加入等待队列的时间戳，是因为后面详单需要该信息
-        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()));
+        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1));
         // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
         waiting_queue1.remove(roomId);
         waiting_queue2.remove(roomId);
@@ -327,7 +327,7 @@ public class RoomsServiceImpl implements RoomsService {
                         LocalDateTime.parse(
                                 timeTrans(
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                        ACServiceMap.get(roomId).getDays()
+                                        ACServiceMap.get(roomId).getDays()-1
                                 ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
                     leaveServiceQueue(roomId, 3);
                 }

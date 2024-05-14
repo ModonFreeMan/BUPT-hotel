@@ -26,6 +26,17 @@ public class ManagerServiceImpl implements ManagerService {
     @Resource
     StatisticsMapper statisticsMapper;
 
+    private static Statistics mergeStatistics(Statistics left, Statistics right) {
+        right.setDetailedBillSum(left.getDetailedBillSum() + right.getDetailedBillSum());
+        right.setDispatchSum(left.getDispatchSum() + right.getDispatchSum());
+        right.setRequestLength(left.getRequestLength() + right.getRequestLength());
+        right.setSpeedChangeSum(left.getSpeedChangeSum() + right.getSpeedChangeSum());
+        right.setSwitchSum(left.getSwitchSum() + right.getSwitchSum());
+        right.setTemChangeSum(left.getTemChangeSum() + right.getTemChangeSum());
+        right.setTotalFee(left.getTotalFee() + right.getTotalFee());
+        return right;
+    }
+
     @Override
     public List<Statistics> getStatistics(String startDate, String endDate) {
         List<Statistics> returnList = statisticsMapper.getStatistics(startDate, endDate);
@@ -38,18 +49,14 @@ public class ManagerServiceImpl implements ManagerService {
         // 统计数据
         returnList = new ArrayList<>( returnList.stream().collect(Collectors.groupingBy(Statistics::getRoomId,
                 Collectors.reducing(new Statistics(),
-                                (left, right) -> {
-                                    right.setDetailedBillSum(left.getDetailedBillSum()+ right.getDetailedBillSum());
-                                    right.setDispatchSum(left.getDispatchSum()+right.getDispatchSum());
-                                    right.setRequestLength(left.getRequestLength()+right.getRequestLength());
-                                    right.setSpeedChangeSum(left.getSpeedChangeSum()+right.getSpeedChangeSum());
-                                    right.setSwitchSum(left.getSwitchSum() + right.getSwitchSum());
-                                    right.setTemChangeSum(left.getTemChangeSum() + right.getTemChangeSum());
-                                    right.setTotalFee(left.getTotalFee()+right.getTotalFee());
-                                    return right;
-                                }
+                        ManagerServiceImpl::mergeStatistics
                         )
                 )).values());
+        // 将所有数据合并到一个statistics中
+        Statistics total_statistic = returnList.stream().reduce(new Statistics(), ManagerServiceImpl::mergeStatistics);
+        total_statistic.setRoomId("-1");
+        total_statistic.setDate(endDate);
+        returnList.add(total_statistic);
         return returnList;
     }
     public boolean dateComparison(String startDate, String endDate,String checkDate){

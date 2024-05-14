@@ -15,9 +15,7 @@ import org.springframework.stereotype.Service;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -171,6 +169,20 @@ public class ReceptionServiceImpl implements ReceptionService {
         totalBill.setAcFee(acFee);
         totalBill.setTotalFee(roomFee+acFee);
         totalBillMapper.insertBill(totalBill);
+
+        TreeMap<String,String> stringMap = new TreeMap<>();
+        stringMap.put("acFee","空调费用");
+        stringMap.put("customerId","顾客身份证");
+        stringMap.put("customerName","顾客姓名");
+        stringMap.put("days","入住天数");
+        stringMap.put("roomFee","住宿费");
+        stringMap.put("roomId","房间号");
+        stringMap.put("roomType","房间类型");
+        stringMap.put("serviceId","服务ID");
+        stringMap.put("totalFee","总费用");
+        List<TotalBill> out = new LinkedList<>();//生成excel只能用集合类
+        out.add(totalBill);
+        generateExcel(out,stringMap,serviceId,"总账单表格.xlsx");
         return totalBill;
     }
 
@@ -181,19 +193,9 @@ public class ReceptionServiceImpl implements ReceptionService {
     @Override
     public List<DetailedBill> getDetailedBills(String serviceId) {
         List<DetailedBill> detailedBills = detailedBillMapper.getDetailedBills(serviceId);
-        ExcelWriter excelWriter = ExcelUtil.getWriter(true);
+        /*ExcelWriter excelWriter = ExcelUtil.getWriter(true);
         excelWriter.setOnlyAlias(true);
         excelWriter.addHeaderAlias("serviceId","服务标识");
-        excelWriter.addHeaderAlias("endTem","结束温度");
-        excelWriter.addHeaderAlias("endTime","结束时间");
-        excelWriter.addHeaderAlias("fee","总费用");
-        excelWriter.addHeaderAlias("rate","费率");
-        excelWriter.addHeaderAlias("roomId","房间号");
-        excelWriter.addHeaderAlias("speedLevel","风速");
-        excelWriter.addHeaderAlias("startTem","起始温度");
-        excelWriter.addHeaderAlias("startTime","开始时间");
-        excelWriter.addHeaderAlias("requestTime","请求时间");
-        excelWriter.addHeaderAlias("serviceLength","服务时长");
         excelWriter.write(detailedBills,true);
         try {
             OutputStream outputStream = new FileOutputStream(serviceId+"详单表格.xlsx");
@@ -203,7 +205,20 @@ public class ReceptionServiceImpl implements ReceptionService {
             e.printStackTrace();
             System.out.println("表格输出失败");
         }
-        excelWriter.close();
+        excelWriter.close();*/
+        TreeMap<String,String> stringMap = new TreeMap<>();
+        stringMap.put("serviceId","服务标识");
+        stringMap.put("endTem","结束温度");
+        stringMap.put("endTime","结束时间");
+        stringMap.put("fee","总费用");
+        stringMap.put("rate","费率");
+        stringMap.put("roomId","房间号");
+        stringMap.put("speedLevel","风速");
+        stringMap.put("startTem","起始温度");
+        stringMap.put("startTime","开始时间");
+        stringMap.put("requestTime","请求时间");
+        stringMap.put("serviceLength","服务时长");
+        generateExcel(detailedBills,stringMap,serviceId,"详单表格.xlsx");
         return detailedBills;
     }
 
@@ -213,7 +228,6 @@ public class ReceptionServiceImpl implements ReceptionService {
     @Override
     public Proof getProof(String serviceId, double paid) {
         TotalBill totalBill = totalBillMapper.getTotalBillByServiceId(serviceId);
-
         Proof proof = new Proof();
         proof.setServiceId(serviceId);
         proof.setPaid(paid);
@@ -224,6 +238,19 @@ public class ReceptionServiceImpl implements ReceptionService {
         //删去对应的UniqueObject
         deleteUniqueService(serviceId);
         roomMapper.setRoomFree(totalBill.getRoomId());
+
+        TreeMap<String,String> stringMap = new TreeMap<>();
+        stringMap.put("change","找余");
+        stringMap.put("customerName","顾客姓名");
+        stringMap.put("paid","实缴");
+        stringMap.put("payable","应缴");
+        stringMap.put("roomId","房间号");
+        stringMap.put("serviceId","服务ID");
+
+        List<Proof> out = new LinkedList<>();
+        out.add(proof);
+        generateExcel(out,stringMap,serviceId,"凭据表格.xlsx");
+
         return proof;
     }
 
@@ -262,4 +289,27 @@ public class ReceptionServiceImpl implements ReceptionService {
             }
         }
     }
+
+    /**
+     * 生成需要的excel文件
+     */
+    public void generateExcel(List<?> data,TreeMap<String,String> stringMap,String serviceId,String fileSuffix){
+        ExcelWriter excelWriter = ExcelUtil.getWriter(true);
+        excelWriter.setOnlyAlias(true);
+        Set<String> keySet = stringMap.keySet();
+        for (String key:keySet) {
+            excelWriter.addHeaderAlias(key,stringMap.get(key));
+        }
+        excelWriter.write(data,true);
+        try {
+            OutputStream outputStream = new FileOutputStream(serviceId+fileSuffix);
+            excelWriter.flush(outputStream);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("表格输出失败");
+        }
+        excelWriter.close();
+    }
+
 }

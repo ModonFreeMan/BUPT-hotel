@@ -59,10 +59,6 @@ public class GlobalConfiguration {
             theStatistics.setRoomId(roomId);
             StatisticsMap.put(roomId, theStatistics);
         }
-        Statistics theStatistics = new Statistics();
-        theStatistics.setDate(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-        theStatistics.setRoomId("-1");
-        StatisticsMap.put("-1", theStatistics);
         return StatisticsMap;
     }
 

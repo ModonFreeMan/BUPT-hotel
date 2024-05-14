@@ -108,7 +108,6 @@ public class RoomsServiceImpl implements RoomsService {
         ACServiceObject room_message = ACServiceMap.get(request.getRoomId());
         if (request.isSwitchStatus() != room_message.isSwitchStatus()) {// 开变关或者关变开
             room_message.setSwitchStatus(request.isSwitchStatus());// 更新空调开关状态
-            statisticsMap.get("-1").setSwitchSum(statisticsMap.get("-1").getSwitchSum() + 1);
             statisticsMap.get(request.getRoomId()).setSwitchSum(statisticsMap.get(request.getRoomId()).getSwitchSum() + 1);
             if (!room_message.isSwitchStatus()) {// 现在是false,即突然关机的情况，需要删除请求队列和服务队列中的对应请求
                 if (!service_queue.contains(request.getRoomId())) {// 非服务队列的情况
@@ -127,8 +126,9 @@ public class RoomsServiceImpl implements RoomsService {
                                                 ).getDays()
                                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         ).getSeconds();
-                        statisticsMap.get("-1").setRequestLength(statisticsMap.get("-1").getRequestLength() + waiting_length);
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
+                    }else{
+                        leaveServiceQueue(request.getRoomId(), 0);
                     }
                     room_message.setCurrentFee(0d);
                 }
@@ -151,12 +151,10 @@ public class RoomsServiceImpl implements RoomsService {
         }
         // 调风次数增加
         if (request.getSpeedLevel() != room_message.getSpeedLevel()) {
-            statisticsMap.get("-1").setSpeedChangeSum(statisticsMap.get("-1").getSpeedChangeSum() + 1);
             statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
             room_message.setSpeedLevel(request.getSpeedLevel());
         }
         // 调温次数增加(温度不变时也加？理由如上所述)
-        statisticsMap.get("-1").setTemChangeSum(statisticsMap.get("-1").getTemChangeSum() + 1);
         statisticsMap.get(request.getRoomId()).setTemChangeSum(statisticsMap.get(request.getRoomId()).getTemChangeSum() + 1);
 
         room_message.setTargetTem(request.getTargetTem());// request中的信息只剩下目标温度没有添加了
@@ -186,7 +184,7 @@ public class RoomsServiceImpl implements RoomsService {
             service_queue.add(roomId);
         }
         if (!roomId.equals("-1")) {
-            // 首先判断是否出现由于回温程序导致目标温度，当前温度，的温度变化不再符合空调制冷模式
+            // 首先判断是否出现由于回温程序导致目标温度，当前温度，的温度变化不再符合空调制冷模式,保留着，目前逻辑不会有这种情况，但是做好预案
             double temper_differ = ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem();
             if (!((centralACStatus.isWorkMode() && temper_differ >= 0) || (!centralACStatus.isWorkMode() && temper_differ <= 0))) {
                 return enterServiceQueue();
@@ -200,19 +198,16 @@ public class RoomsServiceImpl implements RoomsService {
             // 增加今天阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
             int request_length = (int) Duration.between(
                     LocalDateTime.parse(
+                            room_message.getWaiting_queue_timestamp(),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    ),LocalDateTime.parse(
                             timeTrans(
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                     ACServiceMap.get(roomId).getDays()
-                            ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                    LocalDateTime.parse(
-                            room_message.getWaiting_queue_timestamp(),
-                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                    )
+                            ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             ).getSeconds();
-            statisticsMap.get("-1").setRequestLength(statisticsMap.get("-1").getRequestLength() + request_length);
             statisticsMap.get(roomId).setRequestLength(statisticsMap.get(roomId).getRequestLength() + request_length);
             // 增加调度次数
-            statisticsMap.get("-1").setDispatchSum(statisticsMap.get("-1").getDispatchSum() + 1);
             statisticsMap.get(roomId).setDispatchSum(statisticsMap.get(roomId).getDispatchSum() + 1);
         } else
             return false;// 没有可加入的请求
@@ -250,10 +245,8 @@ public class RoomsServiceImpl implements RoomsService {
         ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);
         ACServiceMap.get(roomId).setTotalFee(ACServiceMap.get(roomId).getTotalFee() + nowFee);
         statisticsMap.get(roomId).setTotalFee(statisticsMap.get(roomId).getTotalFee() + nowFee);
-        statisticsMap.get("-1").setTotalFee(statisticsMap.get("-1").getTotalFee() + nowFee);
         // 增加详单条数
         statisticsMap.get(roomId).setDetailedBillSum(statisticsMap.get(roomId).getDetailedBillSum() + 1);
-        statisticsMap.get("-1").setDetailedBillSum(statisticsMap.get("-1").getDetailedBillSum() + 1);
         switch (leaveStatus) {
             case 0:// 关机移出
                 // 本次开机的费用结算完毕
@@ -313,11 +306,7 @@ public class RoomsServiceImpl implements RoomsService {
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
             double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60;
-            // 先判断是否关机的，直接移出
-            if (!ACServiceMap.get(roomId).isSwitchStatus()) {
-                service_queue.remove(roomId);
-                leaveServiceQueue(roomId, 0);
-            } else if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
+            if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
                 leaveServiceQueue(roomId, 1);
             } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
                 // 温度到达,先更新温度再安然退场
@@ -330,12 +319,13 @@ public class RoomsServiceImpl implements RoomsService {
                     ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
                 // 如果时间片到达
                 if ((double) Duration.between(
+                        LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                         LocalDateTime.parse(
                                 timeTrans(
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                         ACServiceMap.get(roomId).getDays()
-                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 2d) {// 暂且时间片为两分钟
+                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d >= 2d) {// 暂且时间片为两分钟
                     leaveServiceQueue(roomId, 3);
                 }
             }

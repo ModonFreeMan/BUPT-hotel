@@ -130,10 +130,10 @@ public class RoomsServiceImpl implements RoomsService {
                                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         ).getSeconds();
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
-                    }else{
-                        leaveServiceQueue(request.getRoomId(), 0);
                     }
                     room_message.setCurrentFee(0d);
+                }else{
+                    leaveServiceQueue(request.getRoomId(), 0);
                 }
                 ACServiceMap.get(request.getRoomId()).setDays(ACServiceMap.get(request.getRoomId()).getDays() + 1);
                 for (Statistics statistics : statisticsMap.values()) {
@@ -303,12 +303,12 @@ public class RoomsServiceImpl implements RoomsService {
                 "yyyy-MM-dd HH:mm:ss");
     }
 
-    @Scheduled(fixedRate = 1000) // 每1s检查一次
+    @Scheduled(fixedRate = 500) // 每0.5s检查一次
     public void scheduledTask() {
         // 温度更新
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*SPEEDUPRATE;
+            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*SPEEDUPRATE /2;
             if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
                 leaveServiceQueue(roomId, 1);
             } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {

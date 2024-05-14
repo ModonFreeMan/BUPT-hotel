@@ -168,7 +168,7 @@ public class RoomsServiceImpl implements RoomsService {
 
     @Override
     public boolean enterServiceQueue() {
-        if (service_queue.size() > SERVICE_QUEUE_SIZE)
+        if (service_queue.size() >= SERVICE_QUEUE_SIZE)
             return false;
         // 取出优先级最高的请求，优先级相同先来先服务
         String roomId = "-1";
@@ -190,6 +190,8 @@ public class RoomsServiceImpl implements RoomsService {
             // 首先判断是否出现由于回温程序导致目标温度，当前温度，的温度变化不再符合空调制冷模式,保留着，目前逻辑不会有这种情况，但是做好预案
             double temper_differ = ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem();
             if (!((centralACStatus.isWorkMode() && temper_differ >= 0) || (!centralACStatus.isWorkMode() && temper_differ <= 0))) {
+                // 不计算不处理，直接结束
+                service_queue.remove(roomId);
                 return enterServiceQueue();
             }
             // 修改加入服务队列的时间戳，修改进入服务队列时的温度

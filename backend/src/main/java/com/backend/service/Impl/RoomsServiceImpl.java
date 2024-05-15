@@ -165,6 +165,39 @@ public class RoomsServiceImpl implements RoomsService {
         enterWaitQueue(request.getRoomId());
     }
 
+    @Override
+    public void enterWaitQueue(String roomId) {
+        recoveryQueue.remove(roomId);
+        // 更新加入等待队列的时间戳，是因为后面详单需要该信息
+        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1));
+        // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
+        waiting_queue1.remove(roomId);
+        waiting_queue2.remove(roomId);
+        waiting_queue3.remove(roomId);
+        // 假设风速对三个值分别对应1,2,3
+        switch (ACServiceMap.get(roomId).getSpeedLevel()) {
+            case 1:
+                waiting_queue1.add(roomId);
+                break;
+            case 2:
+                waiting_queue2.add(roomId);
+                break;
+            case 3:
+                waiting_queue3.add(roomId);
+                break;
+        }
+        // 判断该请求是否可以加入服务队列
+        if(service_queue.size() == SERVICE_QUEUE_SIZE) {
+            String lowerBound = getLowerBound();
+            if (ACServiceMap.get(roomId).getSpeedLevel() > ACServiceMap.get(lowerBound).getSpeedLevel()) {
+                    // 服务队列已满，需要调度
+                    leaveServiceQueue(lowerBound, 4);
+                }
+        }
+        // 有新加入等待队列的对象，看看服务队列是否需要补充
+        enterServiceQueue();
+    }
+
 
     @Override
     public boolean enterServiceQueue() {
@@ -267,35 +300,15 @@ public class RoomsServiceImpl implements RoomsService {
                 // 只有这种情况还要重新加入等待队列
                 enterWaitQueue(roomId);
                 break;
+            case 4:// 抢占式优先级调度,被高优先级强行移出服务队列
+                recoveryQueue.add(roomId);
+                enterWaitQueue(roomId);
+                break;
         }
         // 服务队列移出的时候考虑再添加新的服务对象
         enterServiceQueue();
     }
 
-    @Override
-    public void enterWaitQueue(String roomId) {
-        recoveryQueue.remove(roomId);
-        // 更新加入等待队列的时间戳，是因为后面详单需要该信息
-        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1));
-        // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
-        waiting_queue1.remove(roomId);
-        waiting_queue2.remove(roomId);
-        waiting_queue3.remove(roomId);
-        // 假设风速对三个值分别对应1,2,3
-        switch (ACServiceMap.get(roomId).getSpeedLevel()) {
-            case 1:
-                waiting_queue1.add(roomId);
-                break;
-            case 2:
-                waiting_queue2.add(roomId);
-                break;
-            case 3:
-                waiting_queue3.add(roomId);
-                break;
-        }
-        // 有新加入等待队列的对象，看看服务队列是否需要补充
-        enterServiceQueue();
-    }
 
     @Override
     public String timeTrans(String oldTime, int offset) {
@@ -322,41 +335,44 @@ public class RoomsServiceImpl implements RoomsService {
                     ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() + Temperature_variation);
                 else
                     ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
-                // 如果时间片到达
-                if ((double) Duration.between(
-                        LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                        LocalDateTime.parse(
-                                timeTrans(
-                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                        ACServiceMap.get(roomId).getDays()-1
-                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
-                    leaveServiceQueue(roomId, 3);
+                if(getMaxWaitLevel() == ACServiceMap.get(roomId).getSpeedLevel()) {// 如果等待队列存在该优先级的等待,执行时间片轮转服务，时间片到达处理
+                    if ((double) Duration.between(
+                            LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
+                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                            LocalDateTime.parse(
+                                    timeTrans(
+                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                            ACServiceMap.get(roomId).getDays() - 1
+                                    ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
+                        leaveServiceQueue(roomId, 3);
+                    }
                 }
             }
         }
     }
 
-    @Scheduled(fixedRate = 6000)
+    @Scheduled(fixedRate = 600)
     void temperatureRecovery() {
         for (String roomId : recoveryQueue) {
             double curTem = ACServiceMap.get(roomId).getCurTem();
             double initialTem = fiveRoomDetailsMap.get(roomId).getInitialTem();
             //如果当前温度小于初始化温度
             if (curTem < initialTem) {
-                if (curTem + 0.5 >= initialTem) {
+                if (curTem + 0.05 >= initialTem) {
                     curTem = initialTem;
                     ACServiceMap.get(roomId).setCurTem(curTem);
+                    recoveryQueue.remove(roomId);
                 } else {
-                    curTem += 0.5;
+                    curTem += 0.05;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             } else {
-                if (curTem - 0.5 <= initialTem) {
+                if (curTem - 0.05 <= initialTem) {
                     curTem = initialTem;
                     ACServiceMap.get(roomId).setCurTem(curTem);
+                    recoveryQueue.remove(roomId);
                 } else {
-                    curTem -= 0.5;
+                    curTem -= 0.05;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             }
@@ -367,4 +383,31 @@ public class RoomsServiceImpl implements RoomsService {
         return this.service_queue.contains(roomId);
     }
 
+    private String getLowerBound(){// 获取服务队列最早优先级最低的请求的房间号,只有服务队列已满时执行该判断
+        String roomId = service_queue.get(0);
+        for (int i = 1;i<SERVICE_QUEUE_SIZE;i++) {
+            if (ACServiceMap.get(roomId).getSpeedLevel() > ACServiceMap.get(service_queue.get(i)).getSpeedLevel())
+                roomId = service_queue.get(i);
+        }
+        return roomId;
+    }
+
+    private int getMaxWaitLevel(){// 要求服务队列满时，才会在定时器中调用它,返回当前要执行时间片轮转的优先级(风速)层级
+        if(waiting_queue3.isEmpty()){
+            if(waiting_queue2.isEmpty()){
+                if(waiting_queue1.isEmpty()){
+                    return 0;
+                }
+                    return 1;
+            }
+                return 2;
+        }
+            return 3;
+    }
+
+
+    // 调度算法实现
+    // 新请求负责优先级调度
+    // 定时器负责时间片轮转和温度到达
+    // 其它情况正常处理
 }

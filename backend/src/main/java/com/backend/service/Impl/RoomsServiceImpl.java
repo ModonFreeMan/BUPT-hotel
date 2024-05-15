@@ -156,7 +156,7 @@ public class RoomsServiceImpl implements RoomsService {
                 return;// 从开机到关机，就处理到这点就够了
             }
             double temper_differ = request.getTargetTem() - ACServiceMap.get(request.getRoomId()).getCurTem();
-            if(((temper_differ >= 0 && centralACStatus.isWorkMode())
+            if(!((temper_differ >= 0 && centralACStatus.isWorkMode())
                     || (temper_differ <= 0 && !centralACStatus.isWorkMode())))
                 return;// 从关机到开机，不符合温度模式需求，只要改完开机状态，不需要更多处理
         }

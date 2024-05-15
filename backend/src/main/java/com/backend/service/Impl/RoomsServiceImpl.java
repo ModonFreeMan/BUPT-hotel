@@ -160,10 +160,6 @@ public class RoomsServiceImpl implements RoomsService {
                     || (temper_differ <= 0 && !centralACStatus.isWorkMode())))
                 return;// 从关机到开机，不符合温度模式需求，只要改完开机状态，不需要更多处理
         }
-        // 处理服务队列中的相应请求
-        if (service_queue.contains(request.getRoomId())) {
-            leaveServiceQueue(request.getRoomId(), 1);
-        }
         // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
         waiting_queue1.remove(request.getRoomId());
         waiting_queue2.remove(request.getRoomId());
@@ -173,9 +169,13 @@ public class RoomsServiceImpl implements RoomsService {
             statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
             room_message.setSpeedLevel(request.getSpeedLevel());
         }
-        // 调温次数增加(温度不变时也加？理由如上所述)
-        statisticsMap.get(request.getRoomId()).setTemChangeSum(statisticsMap.get(request.getRoomId()).getTemChangeSum() + 1);
-
+        // 调温次数增加
+        if(request.getTargetTem() != room_message.getTargetTem())
+            statisticsMap.get(request.getRoomId()).setTemChangeSum(statisticsMap.get(request.getRoomId()).getTemChangeSum() + 1);
+        // 处理服务队列中的相应请求,直接更新，不增加新请求进入等待队列了
+        if (service_queue.contains(request.getRoomId())) {
+            return;
+        }
         room_message.setTargetTem(request.getTargetTem());// request中的信息只剩下目标温度没有添加了
         // 向等待队列中加入请求
         enterWaitQueue(request.getRoomId());

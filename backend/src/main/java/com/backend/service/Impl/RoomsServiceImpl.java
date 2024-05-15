@@ -176,12 +176,14 @@ public class RoomsServiceImpl implements RoomsService {
     @Override
     public void enterWaitQueue(String roomId) {
         recoveryQueue.remove(roomId);
-        // 更新加入等待队列的时间戳，是因为后面详单需要该信息
-        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1));
         // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
         waiting_queue1.remove(roomId);
         waiting_queue2.remove(roomId);
         waiting_queue3.remove(roomId);
+        // 处理服务队列中的相应请求
+        if (service_queue.contains(roomId)) {
+            leaveServiceQueue(roomId, 1);
+        }
         // 假设风速对三个值分别对应1,2,3
         switch (ACServiceMap.get(roomId).getSpeedLevel()) {
             case 1:
@@ -194,6 +196,8 @@ public class RoomsServiceImpl implements RoomsService {
                 waiting_queue3.add(roomId);
                 break;
         }
+        // 更新加入等待队列的时间戳，是因为后面详单需要该信息
+        ACServiceMap.get(roomId).setWaiting_queue_timestamp(timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1));
         // 判断该请求是否可以加入服务队列
         if(service_queue.size() == SERVICE_QUEUE_SIZE) {
             String lowerBound = getLowerBound();
@@ -309,7 +313,6 @@ public class RoomsServiceImpl implements RoomsService {
                 enterWaitQueue(roomId);
                 break;
             case 4:// 抢占式优先级调度,被高优先级强行移出服务队列
-                recoveryQueue.add(roomId);
                 enterWaitQueue(roomId);
                 break;
         }
@@ -332,9 +335,7 @@ public class RoomsServiceImpl implements RoomsService {
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
             double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*SPEEDUPRATE /2;
-            if (waiting_queue1.contains(roomId) || waiting_queue2.contains(roomId) || waiting_queue3.contains(roomId)) {// 等待队列有新请求，被覆盖，立刻结束
-                leaveServiceQueue(roomId, 1);
-            } else if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
+            if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
                 // 温度到达,先更新温度再安然退场
                 ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getTargetTem());
                 leaveServiceQueue(roomId, 2);

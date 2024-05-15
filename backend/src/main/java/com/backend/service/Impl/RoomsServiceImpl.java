@@ -94,8 +94,8 @@ public class RoomsServiceImpl implements RoomsService {
         if (targetTem <= centralACStatus.getUpperBound() && targetTem >= centralACStatus.getLowerBound()) {
             // 温度模式的判断不能影响开关机的变化
             double temper_differ = targetTem - ACServiceMap.get(request.getRoomId()).getCurTem();
-            if ((temper_differ >= 0 && centralACStatus.isWorkMode())
-                    || (temper_differ <= 0 && !centralACStatus.isWorkMode())) {
+            if (!((temper_differ >= 0 && centralACStatus.isWorkMode())// 如果模式不对，但是开关变化，允许进入处理
+                    || (temper_differ <= 0 && !centralACStatus.isWorkMode()))) {
                 return request.isSwitchStatus() != ACServiceMap.get(request.getRoomId()).isSwitchStatus();
             }
                 return true;

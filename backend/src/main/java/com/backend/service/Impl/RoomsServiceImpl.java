@@ -92,9 +92,13 @@ public class RoomsServiceImpl implements RoomsService {
         double targetTem = request.getTargetTem();
         // 温度不合理两种情况，超出中央空调范围，或者不符合中央空调运行模式
         if (targetTem <= centralACStatus.getUpperBound() && targetTem >= centralACStatus.getLowerBound()) {
+            // 温度模式的判断不能影响开关机的变化
             double temper_differ = targetTem - ACServiceMap.get(request.getRoomId()).getCurTem();
-            return (temper_differ >= 0 && centralACStatus.isWorkMode())
-                    || (temper_differ <= 0 && !centralACStatus.isWorkMode());
+            if ((temper_differ >= 0 && centralACStatus.isWorkMode())
+                    || (temper_differ <= 0 && !centralACStatus.isWorkMode())) {
+                return request.isSwitchStatus() != ACServiceMap.get(request.getRoomId()).isSwitchStatus();
+            }
+                return true;
         }
         return false;
     }
@@ -149,8 +153,12 @@ public class RoomsServiceImpl implements RoomsService {
                     statistics.setTemChangeSum(0);
                     statistics.setTotalFee(0);
                 }
-                return;// 从开机到关机，除了服务队列中的服务自己判断完后这里就处理这点就够了
+                return;// 从开机到关机，就处理到这点就够了
             }
+            double temper_differ = request.getTargetTem() - ACServiceMap.get(request.getRoomId()).getCurTem();
+            if(((temper_differ >= 0 && centralACStatus.isWorkMode())
+                    || (temper_differ <= 0 && !centralACStatus.isWorkMode())))
+                return;// 从关机到开机，不符合温度模式需求，只要改完开机状态，不需要更多处理
         }
         // 调风次数增加
         if (request.getSpeedLevel() != room_message.getSpeedLevel()) {
@@ -393,6 +401,7 @@ public class RoomsServiceImpl implements RoomsService {
     }
 
     private int getMaxWaitLevel(){// 要求服务队列满时，才会在定时器中调用它,返回当前要执行时间片轮转的优先级(风速)层级
+        // 获取等待队列中最高的优先级，也即可能需要时间片调度的优先级
         if(waiting_queue3.isEmpty()){
             if(waiting_queue2.isEmpty()){
                 if(waiting_queue1.isEmpty()){
@@ -406,8 +415,4 @@ public class RoomsServiceImpl implements RoomsService {
     }
 
 
-    // 调度算法实现
-    // 新请求负责优先级调度
-    // 定时器负责时间片轮转和温度到达
-    // 其它情况正常处理
 }

@@ -160,6 +160,14 @@ public class RoomsServiceImpl implements RoomsService {
                     || (temper_differ <= 0 && !centralACStatus.isWorkMode())))
                 return;// 从关机到开机，不符合温度模式需求，只要改完开机状态，不需要更多处理
         }
+        // 处理服务队列中的相应请求
+        if (service_queue.contains(request.getRoomId())) {
+            leaveServiceQueue(request.getRoomId(), 1);
+        }
+        // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
+        waiting_queue1.remove(request.getRoomId());
+        waiting_queue2.remove(request.getRoomId());
+        waiting_queue3.remove(request.getRoomId());
         // 调风次数增加
         if (request.getSpeedLevel() != room_message.getSpeedLevel()) {
             statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
@@ -176,14 +184,6 @@ public class RoomsServiceImpl implements RoomsService {
     @Override
     public void enterWaitQueue(String roomId) {
         recoveryQueue.remove(roomId);
-        // 先删除等待队列中旧有的请求，再根据优先级加入等待队列
-        waiting_queue1.remove(roomId);
-        waiting_queue2.remove(roomId);
-        waiting_queue3.remove(roomId);
-        // 处理服务队列中的相应请求
-        if (service_queue.contains(roomId)) {
-            leaveServiceQueue(roomId, 1);
-        }
         // 假设风速对三个值分别对应1,2,3
         switch (ACServiceMap.get(roomId).getSpeedLevel()) {
             case 1:

@@ -76,8 +76,8 @@ public class GlobalConfiguration {
         CorsConfiguration config = new CorsConfiguration();
         //放行哪些原始域
         config.addAllowedOrigin("*");
-        //是否发送 Cookie
-        config.setAllowCredentials(true);
+//        //是否发送 Cookie
+//        config.setAllowCredentials(true);
         //放行哪些请求方式
         config.addAllowedMethod("*");
         //放行哪些原始请求头部信息

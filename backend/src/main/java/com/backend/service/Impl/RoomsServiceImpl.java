@@ -177,8 +177,29 @@ public class RoomsServiceImpl implements RoomsService {
             if(request.getSpeedLevel() != room_message.getSpeedLevel()){
                 // 首先更新调风次数
                 statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
-                leaveServiceQueue(request.getRoomId(), 4);
-                room_message.setSpeedLevel(request.getSpeedLevel());
+//                leaveServiceQueue(request.getRoomId(), 4);
+                generateDetailBills(request.getRoomId());
+                room_message.setSpeedLevel(request.getSpeedLevel());// 更新风速
+                // 用于debug，往日志里写记录
+                try {
+                    FileOutputStream fos = new FileOutputStream("log.txt", true);
+                    // 现在时间
+                    String sb = "nowTime:" + timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(request.getRoomId()).getDays() - 1) + "\n" +
+                            "房间号为"+request.getSpeedLevel()+"出服务队列，此时：\n" +
+                            "roomId " + "curTem    " + "beforeServiceTem    " + "service_queue_timestamp    " + "waiting_queue_timestamp    " + "\n" +
+                            "101" + "    " + String.format("%.2f", ACServiceMap.get("101").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("101").getBeforeServiceTem()) + "                  " + ACServiceMap.get("101").getService_queue_timestamp() + "      " + ACServiceMap.get("101").getWaiting_queue_timestamp() + "\n" +
+                            "102" + "    " + String.format("%.2f", ACServiceMap.get("102").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("102").getBeforeServiceTem()) + "                  " + ACServiceMap.get("102").getService_queue_timestamp() + "      " + ACServiceMap.get("102").getWaiting_queue_timestamp() + "\n" +
+                            "103" + "    " + String.format("%.2f", ACServiceMap.get("103").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("103").getBeforeServiceTem()) + "                  " + ACServiceMap.get("103").getService_queue_timestamp() + "      " + ACServiceMap.get("103").getWaiting_queue_timestamp() + "\n" +
+                            "104" + "    " + String.format("%.2f", ACServiceMap.get("104").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("104").getBeforeServiceTem()) + "                  " + ACServiceMap.get("104").getService_queue_timestamp() + "      " + ACServiceMap.get("104").getWaiting_queue_timestamp() + "\n" +
+                            "105" + "    " + String.format("%.2f", ACServiceMap.get("105").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("105").getBeforeServiceTem()) + "                  " + ACServiceMap.get("105").getService_queue_timestamp() + "      " + ACServiceMap.get("105").getWaiting_queue_timestamp() + "\n" +
+                            // 等待队列和服务队列对情况
+                            "waiting_queue1:" + waiting_queue1 + "waiting_queue2:" + waiting_queue2 + "waiting_queue3:" + waiting_queue3 + "\n" +
+                            "service_queue:" + service_queue + "\n";
+                    fos.write(sb.getBytes());
+                    fos.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }else// 否则直接更新
                 return;
         }
@@ -189,6 +210,38 @@ public class RoomsServiceImpl implements RoomsService {
         }
         // 向等待队列中加入请求
         enterWaitQueue(request.getRoomId());
+    }
+
+    private void generateDetailBills(String roomId){
+        service_queue.remove(roomId);
+        // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
+        double nowFee = Math.abs(ACServiceMap.get(roomId).getCurTem() - ACServiceMap.get(roomId).getBeforeServiceTem()) * centralACStatus.getRate();
+        // 通知信息计算处理详单
+        Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                LocalDateTime.parse(
+                        timeTrans(
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                ACServiceMap.get(roomId).getDays()-1
+                        ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        detailedBillMapper.insertBill(
+                receptionService.getServiceId(roomId),
+                ACServiceMap.get(roomId).getCurTem(),
+                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1),
+                nowFee,
+                centralACStatus.getRate(),
+                roomId,
+                ACServiceMap.get(roomId).getSpeedLevel(),
+                ACServiceMap.get(roomId).getBeforeServiceTem(),
+                ACServiceMap.get(roomId).getService_queue_timestamp(),
+                ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
+                String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart())
+        );
+        // 增加currentFee，和TotalFee
+        ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);
+        ACServiceMap.get(roomId).setTotalFee(ACServiceMap.get(roomId).getTotalFee() + nowFee);
+        statisticsMap.get(roomId).setTotalFee(statisticsMap.get(roomId).getTotalFee() + nowFee);
+        // 增加详单条数
+        statisticsMap.get(roomId).setDetailedBillSum(statisticsMap.get(roomId).getDetailedBillSum() + 1);
     }
 
     @Override
@@ -278,29 +331,7 @@ public class RoomsServiceImpl implements RoomsService {
     @Override
     public void leaveServiceQueue(String roomId, int leaveStatus) {
         // 首先字面意思，移出服务队列先
-        service_queue.remove(roomId);
-        // 计算费用：(当前时间-进入服务队列的时间)*费率数组[(int)风速]：在意外移出的情况下最多再运行10s，所以可以忽略不计这里的价格计算大概，不然可以再频繁一点，只要改变每次温度下降幅度即可
-        double nowFee = Math.abs(ACServiceMap.get(roomId).getCurTem() - ACServiceMap.get(roomId).getBeforeServiceTem()) * centralACStatus.getRate();
-        // 通知信息计算处理详单
-        Duration duration = Duration.between(LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                LocalDateTime.parse(
-                        timeTrans(
-                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                ACServiceMap.get(roomId).getDays()-1
-                        ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        detailedBillMapper.insertBill(
-                receptionService.getServiceId(roomId),
-                ACServiceMap.get(roomId).getCurTem(),
-                timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays()-1),
-                nowFee,
-                centralACStatus.getRate(),
-                roomId,
-                ACServiceMap.get(roomId).getSpeedLevel(),
-                ACServiceMap.get(roomId).getBeforeServiceTem(),
-                ACServiceMap.get(roomId).getService_queue_timestamp(),
-                ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
-                String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart())
-        );
+        generateDetailBills(roomId);
 
         // 用于debug，往日志里写记录
         try {
@@ -323,12 +354,6 @@ public class RoomsServiceImpl implements RoomsService {
             throw new RuntimeException(e);
         }
 
-        // 增加currentFee，和TotalFee
-        ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);
-        ACServiceMap.get(roomId).setTotalFee(ACServiceMap.get(roomId).getTotalFee() + nowFee);
-        statisticsMap.get(roomId).setTotalFee(statisticsMap.get(roomId).getTotalFee() + nowFee);
-        // 增加详单条数
-        statisticsMap.get(roomId).setDetailedBillSum(statisticsMap.get(roomId).getDetailedBillSum() + 1);
         switch (leaveStatus) {
             case 0:// 关机移出
                 // 本次开机的费用结算完毕

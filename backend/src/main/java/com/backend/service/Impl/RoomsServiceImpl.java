@@ -281,6 +281,21 @@ public class RoomsServiceImpl implements RoomsService {
                     leaveServiceQueue(lowerBound, 4);
                 }
         }
+        // 立刻进行时间片轮转检查
+        if(isTimeTurn()){
+            for (String new_roomId : service_queue) {
+                if ((double) Duration.between(
+                        LocalDateTime.parse(ACServiceMap.get(new_roomId).getService_queue_timestamp(),
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                        LocalDateTime.parse(
+                                timeTrans(
+                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                        ACServiceMap.get(new_roomId).getDays() - 1
+                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
+                    leaveServiceQueue(new_roomId, 3);
+                }
+            }
+        }
         // 有新加入等待队列的对象，看看服务队列是否需要补充
         enterServiceQueue();
     }

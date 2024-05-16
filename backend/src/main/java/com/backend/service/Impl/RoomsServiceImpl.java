@@ -180,6 +180,7 @@ public class RoomsServiceImpl implements RoomsService {
 //                leaveServiceQueue(request.getRoomId(), 4);
                 generateDetailBills(request.getRoomId());
                 room_message.setSpeedLevel(request.getSpeedLevel());// 更新风速
+
                 // 用于debug，往日志里写记录
                 try {
                     FileOutputStream fos = new FileOutputStream("log.txt", true);
@@ -414,28 +415,28 @@ public class RoomsServiceImpl implements RoomsService {
         }
     }
 
-    @Scheduled(fixedRate = 600)
+    @Scheduled(fixedRate = 500)// 6倍时间流速
     void temperatureRecovery() {
         for (String roomId : recoveryQueue) {
             double curTem = ACServiceMap.get(roomId).getCurTem();
             double initialTem = fiveRoomDetailsMap.get(roomId).getInitialTem();
             //如果当前温度小于初始化温度
             if (curTem < initialTem) {
-                if (curTem + 0.05 >= initialTem) {
+                if (curTem + 0.5/120*SPEEDUPRATE >= initialTem) {
                     curTem = initialTem;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                     recoveryQueue.remove(roomId);
                 } else {
-                    curTem += 0.05;
+                    curTem += 0.5/120*SPEEDUPRATE;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             } else {
-                if (curTem - 0.05 <= initialTem) {
+                if (curTem - 0.5/120*SPEEDUPRATE <= initialTem) {
                     curTem = initialTem;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                     recoveryQueue.remove(roomId);
                 } else {
-                    curTem -= 0.05;
+                    curTem -= 0.5/120*SPEEDUPRATE;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             }

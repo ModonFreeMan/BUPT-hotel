@@ -182,6 +182,11 @@ public class RoomsServiceImpl implements RoomsService {
             }else// 否则直接更新
                 return;
         }
+        if(request.getSpeedLevel() != room_message.getSpeedLevel()){
+            // 如果上面没改，还要在这里修改调风次数和房间信息
+            statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
+            room_message.setSpeedLevel(request.getSpeedLevel());
+        }
         // 向等待队列中加入请求
         enterWaitQueue(request.getRoomId());
     }

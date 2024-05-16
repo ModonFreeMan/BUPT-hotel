@@ -92,17 +92,18 @@ public class RoomsServiceImpl implements RoomsService {
     @Override
     public boolean isTemperatureValid(AirConditionerRequest request) {
         double targetTem = request.getTargetTem();
-        // 温度不合理两种情况，超出中央空调范围，或者不符合中央空调运行模式
-        if (targetTem <= centralACStatus.getUpperBound() && targetTem >= centralACStatus.getLowerBound()) {
-            // 温度模式的判断不能影响开关机的变化
-            double temper_differ = targetTem - ACServiceMap.get(request.getRoomId()).getCurTem();
-            if (!((temper_differ >= 0 && centralACStatus.isWorkMode())// 如果模式不对，但是开关变化，允许进入处理
-                    || (temper_differ <= 0 && !centralACStatus.isWorkMode()))) {
-                return request.isSwitchStatus() != ACServiceMap.get(request.getRoomId()).isSwitchStatus();
-            }
-                return true;
+        // 温度不合理两种情况，超出中央空调范围，或者不符合中央空调运行模式,已修改
+        if(targetTem<centralACStatus.getLowerBound())
+            request.setTargetTem(centralACStatus.getLowerBound());
+        if(targetTem>centralACStatus.getUpperBound())
+            request.setTargetTem(centralACStatus.getUpperBound());
+        // 温度模式的判断不能影响开关机的变化
+        double temper_differ = targetTem - ACServiceMap.get(request.getRoomId()).getCurTem();
+        if (!((temper_differ > 0 && centralACStatus.isWorkMode())// 如果模式不对，但是开关变化，允许进入处理
+                || (temper_differ < 0 && !centralACStatus.isWorkMode()))) {
+            return request.isSwitchStatus() != ACServiceMap.get(request.getRoomId()).isSwitchStatus();
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -282,17 +283,19 @@ public class RoomsServiceImpl implements RoomsService {
                 }
         }
         // 立刻进行时间片轮转检查
-        if(isTimeTurn()){
-            for (String new_roomId : service_queue) {
-                if ((double) Duration.between(
-                        LocalDateTime.parse(ACServiceMap.get(new_roomId).getService_queue_timestamp(),
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                        LocalDateTime.parse(
-                                timeTrans(
-                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                                        ACServiceMap.get(new_roomId).getDays() - 1
-                                ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
-                    leaveServiceQueue(new_roomId, 3);
+        if(service_queue.size()==SERVICE_QUEUE_SIZE) {
+            if (isTimeTurn()) {
+                for (String new_roomId : service_queue) {
+                    if ((double) Duration.between(
+                            LocalDateTime.parse(ACServiceMap.get(new_roomId).getService_queue_timestamp(),
+                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                            LocalDateTime.parse(
+                                    timeTrans(
+                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                            ACServiceMap.get(new_roomId).getDays() - 1
+                                    ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
+                        leaveServiceQueue(new_roomId, 3);
+                    }
                 }
             }
         }

@@ -224,18 +224,18 @@ public class RoomsServiceImpl implements RoomsService {
             return false;
         // 取出优先级最高的请求，优先级相同先来先服务
         String roomId = "-1";
-        if (!waiting_queue1.isEmpty()) {
-            roomId = waiting_queue1.get(0);
+        if (!waiting_queue3.isEmpty()) {
+            roomId = waiting_queue3.get(0);
             // 先移出等待队列，再加入服务队列
-            waiting_queue1.remove(roomId);
+            waiting_queue3.remove(roomId);
             service_queue.add(roomId);
         } else if (!waiting_queue2.isEmpty()) {
             roomId = waiting_queue2.get(0);
             waiting_queue2.remove(roomId);
             service_queue.add(roomId);
-        } else if (!waiting_queue3.isEmpty()) {
-            roomId = waiting_queue3.get(0);
-            waiting_queue3.remove(roomId);
+        } else if (!waiting_queue1.isEmpty()) {
+            roomId = waiting_queue1.get(0);
+            waiting_queue1.remove(roomId);
             service_queue.add(roomId);
         }
         if (!roomId.equals("-1")) {

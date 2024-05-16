@@ -113,7 +113,14 @@ public class ReceptionServiceImpl implements ReceptionService {
      */
     @Override
     public List<Room> getAllRoomsInfo() {
-        return roomMapper.roomList();
+        List<Room> rooms = roomMapper.roomList();
+        for (Room room:rooms) {
+            String customerId = room.getCustomerId();
+            String customerName = customerMapper.selectNameById(customerId);
+            room.setCustomerName(customerName);
+        }
+        return rooms;
+
     }
 
     /**
@@ -182,7 +189,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         stringMap.put("totalFee","总费用");
         List<TotalBill> out = new LinkedList<>();//生成excel只能用集合类
         out.add(totalBill);
-        generateExcel(out,stringMap,serviceId,"总账单表格.xlsx");
+        generateExcel(out,stringMap,roomId,serviceId,"总账单表格.xlsx");
         return totalBill;
     }
 
@@ -218,7 +225,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         stringMap.put("startTime","开始时间");
         stringMap.put("requestTime","请求时间");
         stringMap.put("serviceLength","服务时长");
-        generateExcel(detailedBills,stringMap,serviceId,"详单表格.xlsx");
+        generateExcel(detailedBills,stringMap,"",serviceId,"详单表格.xlsx");
         return detailedBills;
     }
 
@@ -249,7 +256,7 @@ public class ReceptionServiceImpl implements ReceptionService {
 
         List<Proof> out = new LinkedList<>();
         out.add(proof);
-        generateExcel(out,stringMap,serviceId,"凭据表格.xlsx");
+        generateExcel(out,stringMap,totalBill.getRoomId(),serviceId,"凭据表格.xlsx");
 
         return proof;
     }
@@ -293,7 +300,7 @@ public class ReceptionServiceImpl implements ReceptionService {
     /**
      * 生成需要的excel文件
      */
-    public void generateExcel(List<?> data,TreeMap<String,String> stringMap,String serviceId,String fileSuffix){
+    public void generateExcel(List<?> data,TreeMap<String,String> stringMap,String roomId,String serviceId,String fileSuffix){
         ExcelWriter excelWriter = ExcelUtil.getWriter(true);
         excelWriter.setOnlyAlias(true);
         Set<String> keySet = stringMap.keySet();
@@ -302,7 +309,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         }
         excelWriter.write(data,true);
         try {
-            OutputStream outputStream = new FileOutputStream(serviceId+fileSuffix);
+            OutputStream outputStream = new FileOutputStream(roomId+"---"+serviceId+fileSuffix);
             excelWriter.flush(outputStream);
             outputStream.close();
         } catch (Exception e) {

@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -291,6 +293,28 @@ public class RoomsServiceImpl implements RoomsService {
                 ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
                 String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart())
         );
+
+        // 用于debug，往日志里写记录
+        try {
+            FileOutputStream fos = new FileOutputStream("log.txt", true);
+            // 现在时间
+            String sb = "nowTime:" + timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(roomId).getDays() - 1) + "\n" +
+                    "房间号为"+roomId+"出服务队列，此时：\n" +
+                    "roomId " + "curTem    " + "beforeServiceTem    " + "service_queue_timestamp    " + "waiting_queue_timestamp    " + "\n" +
+                    "101" + "    " + String.format("%.2f", ACServiceMap.get("101").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("101").getBeforeServiceTem()) + "                  " + ACServiceMap.get("101").getService_queue_timestamp() + "      " + ACServiceMap.get("101").getWaiting_queue_timestamp() + "\n" +
+                    "102" + "    " + String.format("%.2f", ACServiceMap.get("102").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("102").getBeforeServiceTem()) + "                  " + ACServiceMap.get("102").getService_queue_timestamp() + "      " + ACServiceMap.get("102").getWaiting_queue_timestamp() + "\n" +
+                    "103" + "    " + String.format("%.2f", ACServiceMap.get("103").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("103").getBeforeServiceTem()) + "                  " + ACServiceMap.get("103").getService_queue_timestamp() + "      " + ACServiceMap.get("103").getWaiting_queue_timestamp() + "\n" +
+                    "104" + "    " + String.format("%.2f", ACServiceMap.get("104").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("104").getBeforeServiceTem()) + "                  " + ACServiceMap.get("104").getService_queue_timestamp() + "      " + ACServiceMap.get("104").getWaiting_queue_timestamp() + "\n" +
+                    "105" + "    " + String.format("%.2f", ACServiceMap.get("105").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("105").getBeforeServiceTem()) + "                  " + ACServiceMap.get("105").getService_queue_timestamp() + "      " + ACServiceMap.get("105").getWaiting_queue_timestamp() + "\n" +
+                    // 等待队列和服务队列对情况
+                    "waiting_queue1:" + waiting_queue1 + "waiting_queue2:" + waiting_queue2 + "waiting_queue3:" + waiting_queue3 + "\n" +
+                    "service_queue:" + service_queue + "\n";
+            fos.write(sb.getBytes());
+            fos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
         // 增加currentFee，和TotalFee
         ACServiceMap.get(roomId).setCurrentFee(ACServiceMap.get(roomId).getCurrentFee() + nowFee);
         ACServiceMap.get(roomId).setTotalFee(ACServiceMap.get(roomId).getTotalFee() + nowFee);

@@ -166,11 +166,6 @@ public class RoomsServiceImpl implements RoomsService {
         waiting_queue1.remove(request.getRoomId());
         waiting_queue2.remove(request.getRoomId());
         waiting_queue3.remove(request.getRoomId());
-        // 调风次数增加
-        if (request.getSpeedLevel() != room_message.getSpeedLevel()) {
-            statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
-            room_message.setSpeedLevel(request.getSpeedLevel());
-        }
         // 调温次数增加
         if(request.getTargetTem() != room_message.getTargetTem())
             statisticsMap.get(request.getRoomId()).setTemChangeSum(statisticsMap.get(request.getRoomId()).getTemChangeSum() + 1);
@@ -178,9 +173,12 @@ public class RoomsServiceImpl implements RoomsService {
         room_message.setTargetTem(request.getTargetTem());
         // 处理服务队列中的相应请求,直接更新，不增加新请求进入等待队列了
         if (service_queue.contains(request.getRoomId())) {
-            // 如果是突然把风速调低对情况，需要重新调度
-            if(getMaxWaitLevel() > request.getSpeedLevel()) {
+            // 只要风速改变，就需要重新调度
+            if(request.getSpeedLevel() != room_message.getSpeedLevel()){
+                // 首先更新调风次数
+                statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
                 leaveServiceQueue(request.getRoomId(), 4);
+                room_message.setSpeedLevel(request.getSpeedLevel());
             }else// 否则直接更新
                 return;
         }

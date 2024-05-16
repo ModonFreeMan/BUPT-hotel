@@ -169,10 +169,13 @@ public class RoomsServiceImpl implements RoomsService {
             // request中的信息只剩下目标温度没有添加了
             room_message.setTargetTem(request.getTargetTem());
             if(request.getSpeedLevel() != room_message.getSpeedLevel()){
+                waiting_queue1.remove(request.getRoomId());
+                waiting_queue2.remove(request.getRoomId());
+                waiting_queue3.remove(request.getRoomId());
                 statisticsMap.get(request.getRoomId()).setSpeedChangeSum(statisticsMap.get(request.getRoomId()).getSpeedChangeSum() + 1);
                 room_message.setSpeedLevel(request.getSpeedLevel());
-            }
-            return;
+            }else
+                return;
         }
         // 调温次数增加
         if(request.getTargetTem() != room_message.getTargetTem())

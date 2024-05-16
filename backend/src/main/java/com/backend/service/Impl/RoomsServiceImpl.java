@@ -370,7 +370,7 @@ public class RoomsServiceImpl implements RoomsService {
                     ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() + Temperature_variation);
                 else
                     ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getCurTem() - Temperature_variation);
-                if(getMaxWaitLevel() == ACServiceMap.get(roomId).getSpeedLevel()) {// 如果等待队列存在该优先级的等待,执行时间片轮转服务，时间片到达处理
+                if(isTimeTurn()) {// 如果所有等待队列中的请求的优先级都和服务队列中的请求的优先级相同，则进行时间片轮转
                     if ((double) Duration.between(
                             LocalDateTime.parse(ACServiceMap.get(roomId).getService_queue_timestamp(),
                                     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
@@ -439,6 +439,34 @@ public class RoomsServiceImpl implements RoomsService {
                 return 2;
         }
             return 3;
+    }
+
+    private int getMinWaitLevel() {
+        if(waiting_queue1.isEmpty()){
+            if(waiting_queue2.isEmpty()){
+                if(waiting_queue3.isEmpty()){
+                    return 0;
+                }
+                return 3;
+            }
+            return 2;
+        }
+        return 1;
+    }
+
+    private int getTopBound(){
+        int level = ACServiceMap.get(service_queue.get(0)).getSpeedLevel();
+        for (int i = 1;i<service_queue.size();i++) {
+            int new_level = ACServiceMap.get(service_queue.get(i)).getSpeedLevel();
+            if (new_level > level)
+                level = new_level;
+        }
+        return level;
+    }
+
+    private boolean isTimeTurn(){
+        // 等待队列最低优先级和服务队列最高优先级相同则进行时间片轮转
+        return getMinWaitLevel() == getTopBound();
     }
 
 

@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/bupt_hotel?serverTimezone=GMT
     username: root
-    password: Wwq200299
+    password: mufvycquzgek2qEbba
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 roomSum:
@@ -27,3 +27,5 @@ rooms:
     initialTem: 35.0
     feeEveryDay: 100
 
+server:
+  address: 10.129.194.103

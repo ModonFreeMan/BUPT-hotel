@@ -186,7 +186,7 @@ public class RoomsServiceImpl implements RoomsService {
                     FileOutputStream fos = new FileOutputStream("log.txt", true);
                     // 现在时间
                     String sb = "nowTime:" + timeTrans(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), ACServiceMap.get(request.getRoomId()).getDays() - 1) + "\n" +
-                            "房间号为"+request.getSpeedLevel()+"出服务队列，此时：\n" +
+                            "房间号为"+request.getRoomId()+"出服务队列，此时：\n" +
                             "roomId " + "curTem    " + "beforeServiceTem    " + "service_queue_timestamp    " + "waiting_queue_timestamp    " + "\n" +
                             "101" + "    " + String.format("%.2f", ACServiceMap.get("101").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("101").getBeforeServiceTem()) + "                  " + ACServiceMap.get("101").getService_queue_timestamp() + "      " + ACServiceMap.get("101").getWaiting_queue_timestamp() + "\n" +
                             "102" + "    " + String.format("%.2f", ACServiceMap.get("102").getCurTem()) + "     " + String.format("%.2f", ACServiceMap.get("102").getBeforeServiceTem()) + "                  " + ACServiceMap.get("102").getService_queue_timestamp() + "      " + ACServiceMap.get("102").getWaiting_queue_timestamp() + "\n" +

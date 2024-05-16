@@ -118,6 +118,9 @@ public class ReceptionServiceImpl implements ReceptionService {
             String customerId = room.getCustomerId();
             String customerName = customerMapper.selectNameById(customerId);
             room.setCustomerName(customerName);
+            UniqueServiceObject uniqueService = getUniqueService(room.getRoomId());
+            if(uniqueService!= null)
+                room.setServiceId(uniqueService.getServiceId());
         }
         return rooms;
 

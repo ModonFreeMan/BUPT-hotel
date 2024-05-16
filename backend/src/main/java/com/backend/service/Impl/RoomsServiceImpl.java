@@ -174,11 +174,16 @@ public class RoomsServiceImpl implements RoomsService {
         // 调温次数增加
         if(request.getTargetTem() != room_message.getTargetTem())
             statisticsMap.get(request.getRoomId()).setTemChangeSum(statisticsMap.get(request.getRoomId()).getTemChangeSum() + 1);
+        // request中的信息只剩下目标温度没有添加了
+        room_message.setTargetTem(request.getTargetTem());
         // 处理服务队列中的相应请求,直接更新，不增加新请求进入等待队列了
         if (service_queue.contains(request.getRoomId())) {
-            return;
+            // 如果是突然把风速调低对情况，需要重新调度
+            if(getMaxWaitLevel() > request.getSpeedLevel()) {
+                leaveServiceQueue(request.getRoomId(), 4);
+            }else// 否则直接更新
+                return;
         }
-        room_message.setTargetTem(request.getTargetTem());// request中的信息只剩下目标温度没有添加了
         // 向等待队列中加入请求
         enterWaitQueue(request.getRoomId());
     }
@@ -332,11 +337,8 @@ public class RoomsServiceImpl implements RoomsService {
             case 2:// 温度到达，无额外处理
                 recoveryQueue.add(roomId);
                 break;
-            case 3:// 时间片到达
+            case 3,4:// 时间片到达和抢占式优先级调度,被高优先级强行移出服务队列
                 // 只有这种情况还要重新加入等待队列
-                enterWaitQueue(roomId);
-                break;
-            case 4:// 抢占式优先级调度,被高优先级强行移出服务队列
                 enterWaitQueue(roomId);
                 break;
         }

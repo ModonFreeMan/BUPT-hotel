@@ -144,19 +144,16 @@ public class RoomsServiceImpl implements RoomsService {
                     leaveServiceQueue(request.getRoomId(), 0);
                 }
                 ACServiceMap.get(request.getRoomId()).setDays(ACServiceMap.get(request.getRoomId()).getDays() + 1);
-                for (Statistics statistics : statisticsMap.values()) {
-                    statisticsMapper.add(statistics);// 每个数据都写入数据库中
-                    // 第二天数据的初始化
-                    // 更新开始记录的日期，因为是一天的，所以不记录时分秒
-                    statistics.setDate(DateUtil.formatDate(DateUtil.offset(DateUtil.date(), DateField.DAY_OF_MONTH, ACServiceMap.get(request.getRoomId()).getDays()-1)));
-                    statistics.setDetailedBillSum(0);
-                    statistics.setDispatchSum(0);
-                    statistics.setRequestLength(0);
-                    statistics.setSpeedChangeSum(0);
-                    statistics.setSwitchSum(0);
-                    statistics.setTemChangeSum(0);
-                    statistics.setTotalFee(0);
-                }
+                statisticsMapper.add(statisticsMap.get(request.getRoomId()));// 只有这个房间的数据写入数据库中
+                // 重置统计数据
+                statisticsMap.get(request.getRoomId()).setDate(DateUtil.formatDate(DateUtil.offset(DateUtil.date(), DateField.DAY_OF_MONTH, ACServiceMap.get(request.getRoomId()).getDays()-1)));
+                statisticsMap.get(request.getRoomId()).setDetailedBillSum(0);
+                statisticsMap.get(request.getRoomId()).setDispatchSum(0);
+                statisticsMap.get(request.getRoomId()).setRequestLength(0);
+                statisticsMap.get(request.getRoomId()).setSpeedChangeSum(0);
+                statisticsMap.get(request.getRoomId()).setSwitchSum(0);
+                statisticsMap.get(request.getRoomId()).setTemChangeSum(0);
+                statisticsMap.get(request.getRoomId()).setTotalFee(0);
                 return;// 从开机到关机，就处理到这点就够了
             }
             double temper_differ = request.getTargetTem() - ACServiceMap.get(request.getRoomId()).getCurTem();

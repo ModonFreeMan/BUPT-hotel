@@ -40,10 +40,22 @@ public class ManagerServiceImpl implements ManagerService {
     @Override
     public List<Statistics> getStatistics(String startDate, String endDate) {
         List<Statistics> returnList = statisticsMapper.getStatistics(startDate, endDate);
-        // 先前所有的数据加上处于今天的房间的数据
+        // 先前所有的数据加上处于今天的房间的数据(复制版)
         for (Statistics statistics:statisticsMap.values()) {
             if(dateComparison(startDate,endDate,statistics.getDate())){
-                returnList.add(statistics);
+                Statistics copy_statistics = new Statistics();
+
+                copy_statistics.setTotalFee(statistics.getTotalFee());
+                copy_statistics.setDetailedBillSum(statistics.getDetailedBillSum());
+                copy_statistics.setDispatchSum(statistics.getDispatchSum());
+                copy_statistics.setRequestLength(statistics.getRequestLength());
+                copy_statistics.setSpeedChangeSum(statistics.getSpeedChangeSum());
+                copy_statistics.setSwitchSum(statistics.getSwitchSum());
+                copy_statistics.setTemChangeSum(statistics.getTemChangeSum());
+                copy_statistics.setRoomId(statistics.getRoomId());
+                copy_statistics.setDate(statistics.getDate());
+
+                returnList.add(copy_statistics);
             }
         }
         // 统计数据
@@ -57,6 +69,9 @@ public class ManagerServiceImpl implements ManagerService {
         total_statistic.setRoomId("-1");
         total_statistic.setDate(endDate);
         returnList.add(total_statistic);
+        for(Statistics statistics:returnList){
+            statistics.setTotalFee(Double.parseDouble(String.format("%.2f",statistics.getTotalFee())));
+        }
         return returnList;
     }
     public boolean dateComparison(String startDate, String endDate,String checkDate){

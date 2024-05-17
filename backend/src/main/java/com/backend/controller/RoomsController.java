@@ -3,7 +3,7 @@ package com.backend.controller;
 import com.backend.pojo.AirConditionerRequest;
 import com.backend.pojo.Result;
 import com.backend.service.RoomsService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/rooms")
 public class RoomsController {
 
-    @Autowired
+    @Resource
     private RoomsService roomsService;
 
     /**

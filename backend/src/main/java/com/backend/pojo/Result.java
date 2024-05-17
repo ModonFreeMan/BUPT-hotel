@@ -14,12 +14,12 @@ public class Result<T> {
 
     //成功响应(带数据)
     public static <E> Result<E> success(E data) {
-        return new Result<>(0, "操作成功", data);
+        return new Result<>(200, "操作成功", data);
     }
 
     //成功响应(不带数据)
     public static Result success() {
-        return new Result(0, "操作成功", null);
+        return new Result(200, "操作成功", null);
     }
 
     //错误响应

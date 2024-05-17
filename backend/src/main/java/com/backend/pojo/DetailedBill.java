@@ -21,7 +21,7 @@ public class DetailedBill {
     /**
      * 总费用
      */
-    private double fee;
+    private double totalFee;
     /**
      * 费率
      */

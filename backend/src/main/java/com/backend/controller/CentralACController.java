@@ -3,14 +3,14 @@ package com.backend.controller;
 import com.backend.pojo.CentralACStatus;
 import com.backend.pojo.Result;
 import com.backend.service.CentralACService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/centralAC")
 public class CentralACController {
 
-    @Autowired
+    @Resource
     private CentralACService centralACService;
 
     /**

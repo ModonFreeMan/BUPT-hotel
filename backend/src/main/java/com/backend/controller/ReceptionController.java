@@ -1,15 +1,14 @@
 package com.backend.controller;
 
 
-import com.backend.pojo.CheckinRequest;
-import com.backend.pojo.CheckoutRequest;
-import com.backend.pojo.Result;
-import com.backend.pojo.TotalBill;
+import com.backend.pojo.*;
 import com.backend.service.ReceptionService;
-import com.backend.service.RoomsService;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/reception")
@@ -17,8 +16,6 @@ public class ReceptionController {
     @Resource
     private ReceptionService receptionService;
 
-    @Resource
-    private RoomsService roomsService;
 
     /**
      * 办理入住
@@ -51,7 +48,7 @@ public class ReceptionController {
 
     /**
      * 为当前顾客办理结账手续
-     * @param
+     * @param checkoutRequest 结账请求
      * @return 返回房间信息
      */
     @PutMapping("/checkout")
@@ -65,7 +62,18 @@ public class ReceptionController {
         if(totalBill == null){
             return Result.error("信息不匹配");
         }
-        return Result.success(totalBill);
+        TotalBill result = new TotalBill(
+                Math.round(totalBill.getAcFee() * 100) * 0.01d,
+                totalBill.getCustomerId(),
+                totalBill.getCustomerName(),
+                totalBill.getDays(),
+                Math.round(totalBill.getRoomFee() * 100) * 0.01d,
+                totalBill.getRoomId(),
+                totalBill.getRoomType(),
+                totalBill.getServiceId(),
+                Math.round(totalBill.getTotalFee() * 100) * 0.01d
+        );
+        return Result.success(result);
     }
 
 
@@ -83,7 +91,25 @@ public class ReceptionController {
         if(serviceId.isEmpty())
             return Result.error("信息不匹配");
         //根据服务号获取本次服务的所有详单
-        return Result.success(receptionService.getDetailedBills(serviceId));
+        List<DetailedBill> results = new ArrayList<>();
+        List<DetailedBill> detailedBills = receptionService.getDetailedBills(serviceId);
+        for(DetailedBill detailedBill : detailedBills){
+            DetailedBill result = new DetailedBill(
+                    detailedBill.getServiceId(),
+                    Math.round(detailedBill.getEndTem()*100)*0.01d,
+                    detailedBill.getEndTime(),
+                    Math.round(detailedBill.getTotalFee()*100)*0.01d,
+                    detailedBill.getRate(),
+                    detailedBill.getRoomId(),
+                    detailedBill.getSpeedLevel(),
+                    Math.round(detailedBill.getStartTem()*100)*0.01d,
+                    detailedBill.getStartTime(),
+                    detailedBill.getRequestTime(),
+                    detailedBill.getServiceLength()
+            );
+            results.add(result);
+        }
+        return Result.success(results);
     }
 
     /**
@@ -93,11 +119,20 @@ public class ReceptionController {
      * @return 凭据
      */
     @PutMapping("/proof")
-    public Result getProof(@RequestParam(value="roomId",required=true)String roomId,@RequestParam(value="paid",required=true)double paid){
+    public Result getProof(@RequestParam(value="roomId")String roomId,@RequestParam(value="paid")double paid){
         String serviceId = receptionService.getServiceId(roomId);
         if(serviceId.isEmpty())
             return Result.error("信息不匹配");
-        return Result.success(receptionService.getProof(serviceId,paid));
+        Proof proof = receptionService.getProof(serviceId,paid);
+        Proof result = new Proof(
+                proof.getChange(),
+                proof.getCustomerName(),
+                proof.getPaid(),
+                proof.getPayable(),
+                proof.getRoomId(),
+                proof.getServiceId()
+                );
+        return Result.success(result);
     }
 
 

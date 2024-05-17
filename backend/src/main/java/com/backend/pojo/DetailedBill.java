@@ -15,6 +15,10 @@ public class DetailedBill {
      */
     private double endTem;
     /**
+     * 结束时间
+     */
+    private String endTime;
+    /**
      * 总费用
      */
     private double fee;
@@ -34,10 +38,6 @@ public class DetailedBill {
      * 起始温度
      */
     private double startTem;
-    /**
-     * 结束时间
-     */
-    private String endTime;
     /**
      * 开始时间,开始服务的时间
      */

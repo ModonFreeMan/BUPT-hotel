@@ -39,7 +39,7 @@ public class ManagerController {
                     statistic.getSpeedChangeSum(),
                     statistic.getSwitchSum(),
                     statistic.getTemChangeSum(),
-                    Math.round(statistic.getTotalFee()*100)*0.01d
+                    Double.parseDouble(String.format("%.2f",statistic.getTotalFee()))
             );
             results.add(result);
         }

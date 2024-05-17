@@ -27,20 +27,19 @@ public class CentralACController {
         List<AirConditionerStatus> results = new ArrayList<>();
         for (AirConditionerStatus airConditionerStatus : airConditionerStatusList) {
             AirConditionerStatus result = new AirConditionerStatus(
-                    Math.round(airConditionerStatus.getCurrentFee()*100)*0.01d,
-                    Math.round(airConditionerStatus.getCurTem()*100)*0.01d,
+                    Double.parseDouble(String.format("%.2f",airConditionerStatus.getCurrentFee())),
+                    Double.parseDouble(String.format("%.2f",airConditionerStatus.getCurTem())),
                     airConditionerStatus.getRoomId(),
                     airConditionerStatus.isRunningStatus(),
                     airConditionerStatus.getSpeedLevel(),
                     airConditionerStatus.isSwitchStatus(),
                     airConditionerStatus.getTargetTem(),
-                    Math.round(airConditionerStatus.getTotalFee()*100)*0.01d,
+                    Double.parseDouble(String.format("%.2f",airConditionerStatus.getTotalFee())),
                     airConditionerStatus.isWorkMode()
             );
             results.add(result);
         }
-
-        return Result.success();
+        return Result.success(results);
     }
 
     /**

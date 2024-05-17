@@ -63,15 +63,15 @@ public class ReceptionController {
             return Result.error("信息不匹配");
         }
         TotalBill result = new TotalBill(
-                Math.round(totalBill.getAcFee() * 100) * 0.01d,
+                Double.parseDouble(String.format("%.2f",totalBill.getAcFee())),
                 totalBill.getCustomerId(),
                 totalBill.getCustomerName(),
                 totalBill.getDays(),
-                Math.round(totalBill.getRoomFee() * 100) * 0.01d,
+                Double.parseDouble(String.format("%.2f",totalBill.getRoomFee())),
                 totalBill.getRoomId(),
                 totalBill.getRoomType(),
                 totalBill.getServiceId(),
-                Math.round(totalBill.getTotalFee() * 100) * 0.01d
+                Double.parseDouble(String.format("%.2f",totalBill.getTotalFee()))
         );
         return Result.success(result);
     }
@@ -96,13 +96,13 @@ public class ReceptionController {
         for(DetailedBill detailedBill : detailedBills){
             DetailedBill result = new DetailedBill(
                     detailedBill.getServiceId(),
-                    Math.round(detailedBill.getEndTem()*100)*0.01d,
+                    Double.parseDouble(String.format("%.2f",detailedBill.getEndTem())),
                     detailedBill.getEndTime(),
-                    Math.round(detailedBill.getTotalFee()*100)*0.01d,
+                    Double.parseDouble(String.format("%.2f",detailedBill.getTotalFee())),
                     detailedBill.getRate(),
                     detailedBill.getRoomId(),
                     detailedBill.getSpeedLevel(),
-                    Math.round(detailedBill.getStartTem()*100)*0.01d,
+                    Double.parseDouble(String.format("%.2f",detailedBill.getStartTem())),
                     detailedBill.getStartTime(),
                     detailedBill.getRequestTime(),
                     detailedBill.getServiceLength()

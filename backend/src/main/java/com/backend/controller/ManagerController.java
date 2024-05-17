@@ -3,7 +3,7 @@ package com.backend.controller;
 import com.backend.pojo.Result;
 import com.backend.pojo.Statistics;
 import com.backend.service.ManagerService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/manager")
 public class ManagerController {
-    @Autowired
+    @Resource
     private ManagerService managerService;
 
     /**

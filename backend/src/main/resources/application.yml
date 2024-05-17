@@ -42,5 +42,4 @@ rooms:
 #  105:
 #    initialTem: 35.0
 #    feeEveryDay: 100
-server:
-  address: 10.129.216.84
+

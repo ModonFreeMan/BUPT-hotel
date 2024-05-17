@@ -38,6 +38,4 @@ public class RoomsController {
         return Result.success(roomsService.getAirConditionerStatus(roomId));
     }
 
-
-
 }

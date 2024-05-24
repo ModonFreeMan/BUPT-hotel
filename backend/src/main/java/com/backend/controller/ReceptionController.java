@@ -53,6 +53,7 @@ public class ReceptionController {
      */
     @PutMapping("/checkout")
     public Result customerCheckOut(@RequestBody CheckoutRequest checkoutRequest) {
+        System.out.println(checkoutRequest);
         String serviceId = receptionService.isCustomerExist(checkoutRequest.getRoomId(),checkoutRequest.getCustomerId());
         if(serviceId.isEmpty()){
             //该房间不存在或不服务该用户，打印错误信息

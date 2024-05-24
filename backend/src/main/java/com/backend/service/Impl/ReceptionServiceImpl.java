@@ -147,7 +147,10 @@ public class ReceptionServiceImpl implements ReceptionService {
             System.out.println("退房时出错！不服务该用户");
             return null;
         }
-        TotalBill totalBill = new TotalBill();
+        TotalBill totalBill = totalBillMapper.getTotalBillByServiceId(serviceId);
+        if(totalBill != null)
+            return totalBill;
+        totalBill = new TotalBill();
         totalBill.setServiceId(serviceId);
         totalBill.setRoomId(roomId);
         totalBill.setCustomerId(uniqueServiceObject.getCustomerId());
@@ -168,6 +171,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         totalBill.setDays(days);
         totalBill.setRoomType(room.getRoomType());
         double roomFee = days*fiveRoomDetailHashMap.get(roomId).getFeeEveryDay();
+        //roomFee = Math.round(roomFee*100)/100;
         totalBill.setRoomFee(roomFee);
         /*
         List<DetailedBill> detailedBills = getDetailedBills(serviceId);
@@ -177,6 +181,7 @@ public class ReceptionServiceImpl implements ReceptionService {
         }*/
         double acFee = acServiceObjects.get(roomId).getTotalFee();//改为从空调服务对象中获取总费用
         totalBill.setAcFee(acFee);
+        //acFee = Math.round(acFee*100)/100;
         totalBill.setTotalFee(roomFee+acFee);
         totalBillMapper.insertBill(totalBill);
 

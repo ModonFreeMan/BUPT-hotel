@@ -2,44 +2,47 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/bupt_hotel?serverTimezone=GMT
     username: root
-    password: Wwq200299
+    password: mufvycquzgek2qEbba
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 roomSum:
   number: 5
 
-
-rooms:
-  101:
-    initialTem: 10.0
-    feeEveryDay: 100
-  102:
-    initialTem: 15.0
-    feeEveryDay: 125
-  103:
-    initialTem: 18.0
-    feeEveryDay: 150
-  104:
-    initialTem: 12.0
-    feeEveryDay: 200
-  105:
-    initialTem: 14.0
-    feeEveryDay: 100
+speed_up_rate: 6.0
 
 #rooms:
 #  101:
-#    initialTem: 32.0
+#    initialTem: 10.0
 #    feeEveryDay: 100
 #  102:
-#    initialTem: 28.0
+#    initialTem: 15.0
 #    feeEveryDay: 125
 #  103:
-#    initialTem: 30.0
+#    initialTem: 18.0
 #    feeEveryDay: 150
 #  104:
-#    initialTem: 29.0
+#    initialTem: 12.0
 #    feeEveryDay: 200
 #  105:
-#    initialTem: 35.0
+#    initialTem: 14.0
 #    feeEveryDay: 100
 
+rooms:
+  101:
+    initialTem: 32.0
+    feeEveryDay: 100
+  102:
+    initialTem: 28.0
+    feeEveryDay: 125
+  103:
+    initialTem: 30.0
+    feeEveryDay: 150
+  104:
+    initialTem: 29.0
+    feeEveryDay: 200
+  105:
+    initialTem: 35.0
+    feeEveryDay: 100
+
+server:
+  address: 10.129.194.103

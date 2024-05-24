@@ -10,6 +10,7 @@ import com.backend.service.RoomsService;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -42,8 +43,11 @@ public class RoomsServiceImpl implements RoomsService {
     @Resource
     StatisticsMapper statisticsMapper;
 
+    @Value("${speed_up_rate}")
+    private double speed_up_rate;
 
-    private static final double SPEEDUPRATE = 6;
+
+//    private static final double SPEEDUPRATE = 6;
 
     @Autowired
     @Qualifier("RecoveryQueue")
@@ -122,7 +126,7 @@ public class RoomsServiceImpl implements RoomsService {
                 if (!service_queue.contains(request.getRoomId())) {// 非服务队列的情况
                     if (waiting_queue1.contains(request.getRoomId()) || waiting_queue2.contains(request.getRoomId()) || waiting_queue3.contains(request.getRoomId())) {// 如果在等待队列需要加等待时间
                         // 增加阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
-                        int waiting_length = (int) Duration.between(
+                        int waiting_length = (int) (Duration.between(
                                 LocalDateTime.parse(
                                         room_message.getWaiting_queue_timestamp(),
                                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -134,7 +138,7 @@ public class RoomsServiceImpl implements RoomsService {
                                                         request.getRoomId()
                                                 ).getDays()-1
                                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        ).getSeconds();
+                        ).getSeconds()*speed_up_rate);
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
                     }
                     room_message.setCurrentFee(0d);
@@ -244,7 +248,7 @@ public class RoomsServiceImpl implements RoomsService {
                 ACServiceMap.get(roomId).getBeforeServiceTem(),
                 ACServiceMap.get(roomId).getService_queue_timestamp(),
                 ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
-                String.format("%02d:%02d:%02d", duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart())
+                String.format("%02d:%02d:%02d", (long)(duration.toHours()*speed_up_rate), (long)(duration.toMinutesPart()*speed_up_rate), (long)(duration.toSecondsPart()*speed_up_rate))
         );
         // 增加详单条数
         statisticsMap.get(roomId).setDetailedBillSum(statisticsMap.get(roomId).getDetailedBillSum() + 1);
@@ -286,7 +290,7 @@ public class RoomsServiceImpl implements RoomsService {
                                     timeTrans(
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                             ACServiceMap.get(new_roomId).getDays() - 1
-                                    ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
+                                    ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * speed_up_rate >= 2d) {// 时间片为两分钟
                         leaveServiceQueue(new_roomId, 3);
                     }
                 }
@@ -332,7 +336,7 @@ public class RoomsServiceImpl implements RoomsService {
             ));
             room_message.setBeforeServiceTem(room_message.getCurTem());
             // 增加今天阶段报表的 dispatchSum(等待时长) 当前时间-加入等待队列的时间，转换为秒数
-            int request_length = (int) Duration.between(
+            int request_length = (int) (Duration.between(
                     LocalDateTime.parse(
                             room_message.getWaiting_queue_timestamp(),
                             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
@@ -341,7 +345,7 @@ public class RoomsServiceImpl implements RoomsService {
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                     ACServiceMap.get(roomId).getDays()-1
                             ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            ).getSeconds();
+            ).getSeconds()*speed_up_rate);
             statisticsMap.get(roomId).setRequestLength(statisticsMap.get(roomId).getRequestLength() + request_length);
             // 增加调度次数
             statisticsMap.get(roomId).setDispatchSum(statisticsMap.get(roomId).getDispatchSum() + 1);
@@ -411,7 +415,7 @@ public class RoomsServiceImpl implements RoomsService {
         // 温度更新
         for (String roomId : service_queue) {
             // 预定变化温度∆t，在服务队列中的由于不再运转回温程序，不会发生逆中央空调工作模式
-            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*SPEEDUPRATE /2;
+            double Temperature_variation = attemperation[ACServiceMap.get(roomId).getSpeedLevel()-1] / 60*speed_up_rate /2;
             if (Math.abs(ACServiceMap.get(roomId).getTargetTem() - ACServiceMap.get(roomId).getCurTem()) <= Temperature_variation) {
                 // 温度到达,先更新温度再安然退场
                 ACServiceMap.get(roomId).setCurTem(ACServiceMap.get(roomId).getTargetTem());
@@ -433,7 +437,7 @@ public class RoomsServiceImpl implements RoomsService {
                                     timeTrans(
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                                             ACServiceMap.get(roomId).getDays() - 1
-                                    ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * SPEEDUPRATE >= 2d) {// 时间片为两分钟
+                                    ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).getSeconds() / 60d * speed_up_rate >= 2d) {// 时间片为两分钟
                         leaveServiceQueue(roomId, 3);
                     }
                 }
@@ -448,21 +452,21 @@ public class RoomsServiceImpl implements RoomsService {
             double initialTem = fiveRoomDetailsMap.get(roomId).getInitialTem();
             //如果当前温度小于初始化温度
             if (curTem < initialTem) {
-                if (curTem + 0.5/120*SPEEDUPRATE >= initialTem) {
+                if (curTem + 0.5/120*speed_up_rate >= initialTem) {
                     curTem = initialTem;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                     recoveryQueue.remove(roomId);
                 } else {
-                    curTem += 0.5/120*SPEEDUPRATE;
+                    curTem += 0.5/120*speed_up_rate;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             } else {
-                if (curTem - 0.5/120*SPEEDUPRATE <= initialTem) {
+                if (curTem - 0.5/120*speed_up_rate <= initialTem) {
                     curTem = initialTem;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                     recoveryQueue.remove(roomId);
                 } else {
-                    curTem -= 0.5/120*SPEEDUPRATE;
+                    curTem -= 0.5/120*speed_up_rate;
                     ACServiceMap.get(roomId).setCurTem(curTem);
                 }
             }

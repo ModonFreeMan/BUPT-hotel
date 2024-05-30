@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -16,7 +17,8 @@ public class ReceptionController {
     @Resource
     private ReceptionService receptionService;
 
-
+    @Resource(name = "FiveRoomDetailsMap")
+    HashMap<String, FiveRoomDetail> fiveRoomDetailHashMap; //房间配置信息
     /**
      * 办理入住
      * @param checkinRequest 顾客信息
@@ -24,6 +26,8 @@ public class ReceptionController {
      */
     @PostMapping("/checkin")
     public Result customerCheckIn(@RequestBody @Validated CheckinRequest checkinRequest) {
+        if(!fiveRoomDetailHashMap.containsKey(checkinRequest.getRoomId()))
+            return Result.error("房间不存在，请检查房间号");
         //检查用户要入住的房间是否可用
         if (!receptionService.isRoomEmpty(checkinRequest.getRoomId())) {
             //如果可用，办理入住登记
@@ -54,10 +58,12 @@ public class ReceptionController {
     @PutMapping("/checkout")
     public Result customerCheckOut(@RequestBody CheckoutRequest checkoutRequest) {
         System.out.println(checkoutRequest);
+        if(!fiveRoomDetailHashMap.containsKey(checkoutRequest.getRoomId()))
+            return Result.error("房间不存在，请检查房间号");
         String serviceId = receptionService.isCustomerExist(checkoutRequest.getRoomId(),checkoutRequest.getCustomerId());
         if(serviceId.isEmpty()){
             //该房间不存在或不服务该用户，打印错误信息
-            return Result.error("信息不匹配");
+            return Result.error("房间不服务于该顾客，请检查顾客信息");
         }
         TotalBill totalBill = receptionService.checkOut(checkoutRequest.getRoomId(),serviceId);
         if(totalBill == null){
@@ -86,6 +92,8 @@ public class ReceptionController {
      */
     @GetMapping("/details/{roomId}")
     public Result getDetailedBill(@PathVariable String roomId){
+        if(!fiveRoomDetailHashMap.containsKey(roomId))
+            return Result.error("房间不存在，请检查房间号");
         //根据房间号获取服务号
         String serviceId = receptionService.getServiceId(roomId);
         System.out.println(serviceId);
@@ -121,6 +129,8 @@ public class ReceptionController {
      */
     @PutMapping("/proof")
     public Result getProof(@RequestParam(value="roomId")String roomId,@RequestParam(value="paid")double paid){
+        if(!fiveRoomDetailHashMap.containsKey(roomId))
+            return Result.error("房间不存在，请检查房间号");
         String serviceId = receptionService.getServiceId(roomId);
         if(serviceId.isEmpty())
             return Result.error("信息不匹配");

@@ -254,6 +254,9 @@ public class ReceptionServiceImpl implements ReceptionService {
         deleteUniqueService(serviceId);
         roomMapper.setRoomFree(totalBill.getRoomId());
 
+        ACServiceObject acServiceObject = acServiceObjects.get(totalBill.getRoomId());
+        acServiceObject.setSwitchStatus(false);//空调初始情况为关机
+
         TreeMap<String,String> stringMap = new TreeMap<>();
         stringMap.put("change","找余");
         stringMap.put("customerName","顾客姓名");

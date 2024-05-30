@@ -248,7 +248,7 @@ public class RoomsServiceImpl implements RoomsService {
                 ACServiceMap.get(roomId).getBeforeServiceTem(),
                 ACServiceMap.get(roomId).getService_queue_timestamp(),
                 ACServiceMap.get(roomId).getWaiting_queue_timestamp(),
-                String.format("%02d:%02d:%02d", (long)(duration.toHours()*speed_up_rate), (long)(duration.toMinutesPart()*speed_up_rate), (long)(duration.toSecondsPart()*speed_up_rate))
+                String.format("%ds", (long)(duration.toSeconds()*speed_up_rate))
         );
         // 增加详单条数
         statisticsMap.get(roomId).setDetailedBillSum(statisticsMap.get(roomId).getDetailedBillSum() + 1);

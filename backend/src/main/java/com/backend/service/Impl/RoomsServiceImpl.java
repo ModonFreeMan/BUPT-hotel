@@ -87,7 +87,7 @@ public class RoomsServiceImpl implements RoomsService {
                 roomId, service_queue.contains(roomId),
                 acServiceObject.getSpeedLevel(), acServiceObject.isSwitchStatus(),
                 Double.parseDouble(String.format("%.2f",acServiceObject.getTargetTem())), Double.parseDouble(String.format("%.2f",acServiceObject.getTotalFee())),
-                acServiceObject.isWorkMode());
+                centralACStatus.isWorkMode());
     }
 
 
@@ -140,6 +140,7 @@ public class RoomsServiceImpl implements RoomsService {
                                         ), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
                         ).getSeconds()*speed_up_rate);
                         statisticsMap.get(request.getRoomId()).setRequestLength(statisticsMap.get(request.getRoomId()).getRequestLength() + waiting_length);
+                        recoveryQueue.add(request.getRoomId());
                     }
                     room_message.setCurrentFee(0d);
                 }else{

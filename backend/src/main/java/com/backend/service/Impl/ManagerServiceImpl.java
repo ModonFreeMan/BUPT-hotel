@@ -65,7 +65,10 @@ public class ManagerServiceImpl implements ManagerService {
                         )
                 )).values());
         // 将所有数据合并到一个statistics中
-        Statistics total_statistic = returnList.stream().reduce(new Statistics(), ManagerServiceImpl::mergeStatistics);
+        Statistics total_statistic = new Statistics();
+        for (Statistics statistics:returnList) {
+            mergeStatistics(statistics,total_statistic);
+        }
         total_statistic.setRoomId("-1");
         total_statistic.setDate(endDate);
         returnList.add(total_statistic);
